@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Offices — Sales Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0d1117;color:#e2e8f0;font-family:system-ui,sans-serif;padding:24px;min-height:100vh;}
+h1{font-size:26px;font-weight:800;letter-spacing:-1px;}
+.sub{font-size:13px;color:#94a3b8;font-weight:400;margin-left:10px;}
+.kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;}
+.kpi{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:12px 18px;flex:1 1 130px;}
+.kpi-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;margin-bottom:4px;}
+.kpi-value{font-size:19px;font-weight:800;}
+.kpi-sub{font-size:10px;color:#94a3b8;margin-top:2px;}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:20px 0;padding-bottom:4px;}
+.tab{padding:6px 14px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:#1e293b;color:#94a3b8;white-space:nowrap;}
+.tab.active{background:#00d4aa;color:#0d1117;}
+.grid2{display:grid;grid-template-columns:220px 1fr;gap:16px;margin-bottom:16px;}
+.card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:18px;}
+.section-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;margin-bottom:10px;}
+.rev-value{font-size:24px;font-weight:800;color:#00d4aa;line-height:1.2;}
+.mom{font-size:13px;font-weight:700;margin-top:8px;}
+.top-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:0;}
+.top-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;position:relative;flex:1;min-width:0;}
+.top-icon{font-size:20px;margin-bottom:8px;}
+.top-type{font-size:16px;font-weight:800;margin-bottom:4px;}
+.top-val{font-size:13px;font-weight:600;}
+.expand-panel{background:#1e293b;border-radius:12px;padding:18px;margin-top:8px;margin-bottom:8px;}
+.summary-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+.toggle-group{display:flex;gap:4px;}
+.toggle-btn{padding:4px 12px;border-radius:14px;border:none;cursor:pointer;font-size:11px;font-weight:600;background:#1e293b;color:#94a3b8;}
+.toggle-btn.active{background:#00d4aa;color:#0d1117;}
+.pt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.pt-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;cursor:pointer;}
+.pt-name{font-size:14px;font-weight:800;color:#00d4aa;margin-bottom:12px;}
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.stat-label{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;}
+.stat-value{font-size:11px;font-weight:700;margin-top:2px;}
+.pie-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.pie-wrap{text-align:center;}
+.pie-title{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;margin-bottom:6px;}
+.legend{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;justify-content:center;}
+.legend-item{font-size:9px;font-weight:600;}
+.pt-breakdown{background:#162032;border-radius:0 0 12px 12px;padding:16px;margin-top:0;}
+.col-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.col-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.bar-row{margin-bottom:10px;}
+.bar-label-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:11px;gap:8px;}
+.bar-track{background:#0d1117;border-radius:4px;height:10px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;}
+.footer{text-align:center;font-size:11px;color:#94a3b8;margin-top:24px;padding-bottom:24px;}
+::-webkit-scrollbar{height:4px;background:#1e293b;}
+::-webkit-scrollbar-thumb{background:#334155;border-radius:2px;}
+@media(max-width:768px){
+  body{padding:14px;}
+  h1{font-size:20px;}
+  .sub{display:block;margin-left:0;margin-top:4px;}
+  .kpi{flex:1 1 calc(50% - 8px);padding:10px 14px;}
+  .kpi-value{font-size:15px;}
+  .grid2{grid-template-columns:1fr;}
+  .top-row{flex-direction:column;}
+  .pt-grid{grid-template-columns:1fr;}
+  .card{padding:14px;}
+  .rev-value{font-size:20px;}
+  .summary-header{flex-direction:column;align-items:flex-start;}
+  .col-pair{grid-template-columns:1fr;}
+}
+@media(max-width:400px){.kpi{flex:1 1 100%;}}
+</style>
+</head>
+<body>
+<h1>Offices <span class="sub">Sales Dashboard</span></h1>
+<div id="errMsg" style="display:none;background:#7f1d1d;color:#fca5a5;padding:12px;border-radius:8px;margin-top:12px;font-size:12px;"></div>
+<div class="kpi-row" id="kpiRow"></div>
+<div class="card" style="margin-top:16px;margin-bottom:0;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <div class="section-label" style="margin:0;">Area Programme by Product Type</div>
+    <div class="section-label" style="margin:0;" id="treemapTotal"></div>
+  </div>
+  <svg id="treemapSvg" viewBox="0 0 560 140" style="width:100%;height:auto;border-radius:6px;overflow:hidden;"></svg>
+  <div id="treemapLegend" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;"></div>
+</div>
+<div class="tabs" id="monthTabs"></div>
+<div class="grid2">
+  <div class="card">
+    <div class="section-label">Monthly Revenue</div>
+    <div class="rev-value" id="revValue"></div>
+    <div class="mom" id="momVal"></div>
+  </div>
+  <div class="card">
+    <div class="section-label">Revenue Trend</div>
+    <svg id="trendSvg" style="width:100%;height:90px;" viewBox="0 0 600 104" preserveAspectRatio="none"></svg>
+  </div>
+</div>
+<div class="card" style="margin-bottom:16px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+    <div class="section-label" style="margin:0;">2026 Target vs Actual Revenue</div>
+    <div class="toggle-group">
+      <button class="toggle-btn active" id="btnTgtMonthly" onclick="setTargetView('monthly')">Monthly</button>
+      <button class="toggle-btn" id="btnTgtCumulative" onclick="setTargetView('cumulative')">Cumulative</button>
+    </div>
+  </div>
+  <div class="section-label" style="margin-bottom:10px;margin-top:2px;"><span id="tgtSummary"></span></div>
+  <div id="targetChart"></div>
+  <div style="display:flex;gap:16px;margin-top:10px;font-size:10px;flex-wrap:wrap;">
+    <span style="color:#00d4aa;font-weight:600;">&#9646; Actual</span>
+    <span style="color:#f59e0b;font-weight:600;opacity:0.5;">&#9646; Target</span>
+    <span style="color:#f87171;font-weight:600;">&#9135; Cumulative Actual</span>
+    <span style="color:#f59e0b;font-weight:600;">&#9135; Cumulative Target</span>
+  </div>
+</div>
+<div class="section-label" style="margin-bottom:10px">Top Product Type &mdash; <span id="topMonthLabel"></span></div>
+<div class="top-row">
+  <div style="flex:1;min-width:0;">
+    <div class="top-card" style="border-top:3px solid #f59e0b;cursor:pointer;" id="grossCard">
+      <div class="top-icon">&#127942;</div>
+      <div class="section-label">Highest Gross Sales</div>
+      <div class="top-type" id="topGrossType"></div>
+      <div class="top-val" style="color:#f59e0b" id="topGrossVal"></div>
+      <div id="grossArrow" style="position:absolute;top:12px;right:14px;font-size:10px;color:#94a3b8;font-weight:600;">VIEW ALL &#9660;</div>
+    </div>
+    <div id="grossPanel" style="display:none;background:#1e293b;border:1px solid #f59e0b;border-top:none;border-radius:0 0 12px 12px;padding:18px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="section-label" style="margin:0">Gross Sales by Product Type &mdash; <span id="grossPanelMonth"></span></div>
+        <button id="grossCloseBtn" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;">&#10005;</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;">
+        <button id="btnGrossMonthly" class="toggle-btn active" onclick="setGrossView('monthly')">Monthly</button>
+        <button id="btnGrossCumulative" class="toggle-btn" onclick="setGrossView('cumulative')">Cumulative</button>
+      </div>
+      <div id="grossBreakdown"></div>
+    </div>
+  </div>
+  <div style="flex:1;min-width:0;">
+    <div class="top-card" style="border-top:3px solid #00d4aa;cursor:pointer;" id="absCard">
+      <div class="top-icon">&#128142;</div>
+      <div class="section-label">Highest Absorption</div>
+      <div class="top-type" id="topAbsType"></div>
+      <div class="top-val" style="color:#00d4aa" id="topAbsVal"></div>
+      <div id="absArrow" style="position:absolute;top:12px;right:14px;font-size:10px;color:#94a3b8;font-weight:600;">VIEW ALL &#9660;</div>
+    </div>
+    <div id="absPanel" style="display:none;background:#1e293b;border:1px solid #00d4aa;border-top:none;border-radius:0 0 12px 12px;padding:18px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div class="section-label" style="margin:0">Absorption Rate by Product Type &mdash; <span id="absPanelMonth"></span></div>
+        <button id="absCloseBtn" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;">&#10005;</button>
+      </div>
+      <div id="absBreakdown"></div>
+    </div>
+  </div>
+  <div style="flex:1;min-width:0;">
+    <div class="top-card" style="border-top:3px solid #a78bfa;">
+      <div class="top-icon">&#9889;</div>
+      <div class="section-label">Fastest to Sell</div>
+      <div class="top-type" id="topFastType"></div>
+      <div class="top-val" style="color:#a78bfa" id="topFastVal"></div>
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-top:8px;margin-bottom:16px;">
+  <div class="section-label">Sales by Product Type &mdash; <span id="barMonthLabel"></span></div>
+  <div id="barChart"></div>
+</div>
+<div class="summary-header">
+  <div class="section-label" style="margin:0">Product Type Summary</div>
+  <div class="toggle-group">
+    <button class="toggle-btn active" id="btnAllTime">All Time</button>
+    <button class="toggle-btn" id="btnThisMonth">This Month</button>
+  </div>
+</div>
+<div class="pt-grid" id="ptGrid"></div>
+<div class="footer" id="footer"></div>
+
+<script>
+var D={"projectName":"Offices","headerKpis":{"totalReleased":442,"totalSold":427,"totalHold":6,"overallAbsorption":96.6,"totalRevenue":12522719360,"totalCommitted":12759581360,"totalAvailable":458920000},"months":["2019-11","2019-12","2020-01","2020-02","2020-03","2020-05","2020-07","2020-08","2020-09","2020-10","2020-11","2021-01","2021-02","2021-03","2021-04","2021-05","2021-06","2021-08","2021-09","2021-10","2021-11","2021-12","2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2025-01","2025-02","2025-03","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"],"trendData":[{"month":"2019-11","revenue":40410000},{"month":"2019-12","revenue":44159650},{"month":"2020-01","revenue":20956000},{"month":"2020-02","revenue":30239000},{"month":"2020-03","revenue":3879000},{"month":"2020-05","revenue":25830000},{"month":"2020-07","revenue":9090000},{"month":"2020-08","revenue":39450000},{"month":"2020-09","revenue":26801000},{"month":"2020-10","revenue":845534000},{"month":"2020-11","revenue":20748000},{"month":"2021-01","revenue":98144000},{"month":"2021-02","revenue":158744330},{"month":"2021-03","revenue":35385000},{"month":"2021-04","revenue":119505000},{"month":"2021-05","revenue":9984000},{"month":"2021-06","revenue":26715000},{"month":"2021-08","revenue":6372000},{"month":"2021-09","revenue":24882000},{"month":"2021-10","revenue":90714000},{"month":"2021-11","revenue":143258560},{"month":"2021-12","revenue":4176000},{"month":"2022-01","revenue":28073000},{"month":"2022-02","revenue":69474000},{"month":"2022-03","revenue":74530000},{"month":"2022-04","revenue":28365000},{"month":"2022-05","revenue":185660000},{"month":"2022-06","revenue":50572000},{"month":"2022-07","revenue":90865000},{"month":"2022-08","revenue":122683000},{"month":"2022-09","revenue":221813000},{"month":"2022-10","revenue":192126000},{"month":"2022-11","revenue":325406000},{"month":"2022-12","revenue":171070000},{"month":"2023-01","revenue":80376000},{"month":"2023-02","revenue":45423000},{"month":"2023-03","revenue":47779000},{"month":"2023-04","revenue":82906000},{"month":"2023-05","revenue":89288000},{"month":"2023-06","revenue":286651000},{"month":"2023-07","revenue":228029000},{"month":"2023-08","revenue":106853000},{"month":"2023-09","revenue":247854720},{"month":"2023-10","revenue":113889000},{"month":"2023-11","revenue":85024000},{"month":"2023-12","revenue":36501000},{"month":"2024-01","revenue":687330100},{"month":"2024-02","revenue":151181000},{"month":"2024-03","revenue":5497000},{"month":"2024-04","revenue":81171000},{"month":"2024-06","revenue":99207000},{"month":"2024-07","revenue":85037000},{"month":"2024-08","revenue":310989000},{"month":"2024-09","revenue":104252000},{"month":"2024-10","revenue":466215000},{"month":"2024-11","revenue":329558000},{"month":"2025-01","revenue":70903000},{"month":"2025-02","revenue":121430000},{"month":"2025-03","revenue":306572000},{"month":"2025-05","revenue":11403000},{"month":"2025-06","revenue":1114866000},{"month":"2025-07","revenue":86228000},{"month":"2025-08","revenue":126013000},{"month":"2025-09","revenue":3354000},{"month":"2025-10","revenue":2102000},{"month":"2025-11","revenue":309558000},{"month":"2025-12","revenue":89929000},{"month":"2026-01","revenue":883274000},{"month":"2026-02","revenue":113122000},{"month":"2026-03","revenue":299229000},{"month":"2026-04","revenue":989896000},{"month":"2026-05","revenue":134427000},{"month":"2026-06","revenue":703789000}],"byMonth":{"2019-11":{"revenue":40410000,"momPct":null,"metrics":{"topGross":"Multiples","topGrossVal":40410000,"topAbsorption":"Multiples","topAbsorptionVal":3.7,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":40410000,"units":13}]}},"2019-12":{"revenue":44159650,"momPct":9.279015095273447,"metrics":{"topGross":"Multiples","topGrossVal":27403650,"topAbsorption":"Multiples","topAbsorptionVal":6.3,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":27403650,"units":9},{"type":"Quads","revenue":16756000,"units":1}]}},"2020-01":{"revenue":20956000,"momPct":-52.54491373912611,"metrics":{"topGross":"Multiples","topGrossVal":20956000,"topAbsorption":"Multiples","topAbsorptionVal":8.0,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":20956000,"units":6}]}},"2020-02":{"revenue":30239000,"momPct":44.29757587325827,"metrics":{"topGross":"Quads","topGrossVal":18445000,"topAbsorption":"Multiples","topAbsorptionVal":9.2,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":11794000,"units":4},{"type":"Quads","revenue":18445000,"units":1}]}},"2020-03":{"revenue":3879000,"momPct":-87.17219484771321,"metrics":{"topGross":"Multiples","topGrossVal":3879000,"topAbsorption":"Multiples","topAbsorptionVal":9.5,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":3879000,"units":1}]}},"2020-05":{"revenue":25830000,"momPct":565.893271461717,"metrics":{"topGross":"Quads","topGrossVal":14583000,"topAbsorption":"Multiples","topAbsorptionVal":10.6,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":11247000,"units":4},{"type":"Quads","revenue":14583000,"units":1}]}},"2020-07":{"revenue":9090000,"momPct":-64.80836236933798,"metrics":{"topGross":"Multiples","topGrossVal":9090000,"topAbsorption":"Multiples","topAbsorptionVal":11.2,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":9090000,"units":2}]}},"2020-08":{"revenue":39450000,"momPct":333.993399339934,"metrics":{"topGross":"Quads","topGrossVal":39450000,"topAbsorption":"Multiples","topAbsorptionVal":11.2,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Quads","revenue":39450000,"units":2}]}},"2020-09":{"revenue":26801000,"momPct":-32.063371356147016,"metrics":{"topGross":"Quads","topGrossVal":15314000,"topAbsorption":"Multiples","topAbsorptionVal":12.1,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":11487000,"units":3},{"type":"Quads","revenue":15314000,"units":1}]}},"2020-10":{"revenue":845534000,"momPct":3054.859893287564,"metrics":{"topGross":"Privates","topGrossVal":776945000,"topAbsorption":"Privates","topAbsorptionVal":35.7,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":68589000,"units":19},{"type":"Privates","revenue":776945000,"units":5}]}},"2020-11":{"revenue":20748000,"momPct":-97.54616609148775,"metrics":{"topGross":"Multiples","topGrossVal":20748000,"topAbsorption":"Privates","topAbsorptionVal":35.7,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":20748000,"units":4}]}},"2021-01":{"revenue":98144000,"momPct":373.0287256603046,"metrics":{"topGross":"Privates","topGrossVal":91650000,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":6494000,"units":2},{"type":"Privates","revenue":91650000,"units":1}]}},"2021-02":{"revenue":158744330,"momPct":61.74634210955332,"metrics":{"topGross":"Quads","topGrossVal":141926330,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":16818000,"units":3},{"type":"Quads","revenue":141926330,"units":5}]}},"2021-03":{"revenue":35385000,"momPct":-77.70944007889919,"metrics":{"topGross":"Quads","topGrossVal":32507000,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":2878000,"units":1},{"type":"Quads","revenue":32507000,"units":1}]}},"2021-04":{"revenue":119505000,"momPct":237.7278507842306,"metrics":{"topGross":"Quads","topGrossVal":115728000,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":3777000,"units":1},{"type":"Quads","revenue":115728000,"units":3}]}},"2021-05":{"revenue":9984000,"momPct":-91.64553784360487,"metrics":{"topGross":"Multiples","topGrossVal":9984000,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":9984000,"units":1}]}},"2021-06":{"revenue":26715000,"momPct":167.578125,"metrics":{"topGross":"Quads","topGrossVal":19444000,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":7271000,"units":2},{"type":"Quads","revenue":19444000,"units":1}]}},"2021-08":{"revenue":6372000,"momPct":-76.14823133071307,"metrics":{"topGross":"Multiples","topGrossVal":6372000,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":6372000,"units":2}]}},"2021-09":{"revenue":24882000,"momPct":290.48964218455745,"metrics":{"topGross":"Multiples","topGrossVal":24882000,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":24882000,"units":6}]}},"2021-10":{"revenue":90714000,"momPct":264.576802507837,"metrics":{"topGross":"Quads","topGrossVal":50726000,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":39988000,"units":7},{"type":"Quads","revenue":50726000,"units":2}]}},"2021-11":{"revenue":143258560,"momPct":57.9233194435258,"metrics":{"topGross":"Quads","topGrossVal":128613000,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":14645560,"units":4},{"type":"Quads","revenue":128613000,"units":5}]}},"2021-12":{"revenue":4176000,"momPct":-97.08499094225155,"metrics":{"topGross":"Multiples","topGrossVal":4176000,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":4176000,"units":1}]}},"2022-01":{"revenue":28073000,"momPct":572.2461685823755,"metrics":{"topGross":"Quads","topGrossVal":20616000,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":7457000,"units":2},{"type":"Quads","revenue":20616000,"units":1}]}},"2022-02":{"revenue":69474000,"momPct":147.47622270509032,"metrics":{"topGross":"Quads","topGrossVal":57890000,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":11584000,"units":4},{"type":"Quads","revenue":57890000,"units":2}]}},"2022-03":{"revenue":74530000,"momPct":7.277542677836313,"metrics":{"topGross":"Multiples","topGrossVal":74530000,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":74530000,"units":16}]}},"2022-04":{"revenue":28365000,"momPct":-61.94150006708708,"metrics":{"topGross":"Quads","topGrossVal":28365000,"topAbsorption":"Privates","topAbsorptionVal":42.9,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Quads","revenue":28365000,"units":1}]}},"2022-05":{"revenue":185660000,"momPct":554.5390445972148,"metrics":{"topGross":"Quads","topGrossVal":167915000,"topAbsorption":"Quads","topAbsorptionVal":47.6,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":17745000,"units":3},{"type":"Quads","revenue":167915000,"units":3}]}},"2022-06":{"revenue":50572000,"momPct":-72.76096089626198,"metrics":{"topGross":"Quads","topGrossVal":32247000,"topAbsorption":"Quads","topAbsorptionVal":49.2,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":18325000,"units":3},{"type":"Quads","revenue":32247000,"units":1}]}},"2022-07":{"revenue":90865000,"momPct":79.67452345171242,"metrics":{"topGross":"Quads","topGrossVal":69284000,"topAbsorption":"Quads","topAbsorptionVal":52.4,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":21581000,"units":5},{"type":"Quads","revenue":69284000,"units":2}]}},"2022-08":{"revenue":122683000,"momPct":35.01678313982281,"metrics":{"topGross":"Quads","topGrossVal":65146000,"topAbsorption":"Quads","topAbsorptionVal":55.6,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":57537000,"units":9},{"type":"Quads","revenue":65146000,"units":2}]}},"2022-09":{"revenue":221813000,"momPct":80.80174107252023,"metrics":{"topGross":"Privates","topGrossVal":186682000,"topAbsorption":"Quads","topAbsorptionVal":55.6,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":35131000,"units":6},{"type":"Privates","revenue":186682000,"units":1}]}},"2022-10":{"revenue":192126000,"momPct":-13.383796260814284,"metrics":{"topGross":"Multiples","topGrossVal":151486000,"topAbsorption":"Quads","topAbsorptionVal":57.1,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":151486000,"units":20},{"type":"Quads","revenue":40640000,"units":1}]}},"2022-11":{"revenue":325406000,"momPct":69.37114185482444,"metrics":{"topGross":"Privates","topGrossVal":175200000,"topAbsorption":"Quads","topAbsorptionVal":60.3,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":37829000,"units":5},{"type":"Privates","revenue":175200000,"units":1},{"type":"Quads","revenue":112377000,"units":2}]}},"2022-12":{"revenue":171070000,"momPct":-47.42875054547242,"metrics":{"topGross":"Multiples","topGrossVal":91164000,"topAbsorption":"Quads","topAbsorptionVal":63.5,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":91164000,"units":13},{"type":"Quads","revenue":79906000,"units":2}]}},"2023-01":{"revenue":80376000,"momPct":-53.01572455719881,"metrics":{"topGross":"Multiples","topGrossVal":80376000,"topAbsorption":"Quads","topAbsorptionVal":63.5,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":80376000,"units":3}]}},"2023-02":{"revenue":45423000,"momPct":-43.486861749776054,"metrics":{"topGross":"Multiples","topGrossVal":45423000,"topAbsorption":"Quads","topAbsorptionVal":63.5,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":45423000,"units":4}]}},"2023-03":{"revenue":47779000,"momPct":5.186799638949435,"metrics":{"topGross":"Multiples","topGrossVal":47779000,"topAbsorption":"Quads","topAbsorptionVal":63.5,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":47779000,"units":6}]}},"2023-04":{"revenue":82906000,"momPct":73.51974716925847,"metrics":{"topGross":"Duplex","topGrossVal":41968000,"topAbsorption":"Quads","topAbsorptionVal":63.5,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Duplex","revenue":41968000,"units":1},{"type":"Multiples","revenue":40938000,"units":5}]}},"2023-05":{"revenue":89288000,"momPct":7.697874701469143,"metrics":{"topGross":"Multiples","topGrossVal":89288000,"topAbsorption":"Quads","topAbsorptionVal":63.5,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":89288000,"units":9}]}},"2023-06":{"revenue":286651000,"momPct":221.04090135292535,"metrics":{"topGross":"Duplex","topGrossVal":205800000,"topAbsorption":"Quads","topAbsorptionVal":63.5,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Duplex","revenue":205800000,"units":1},{"type":"Multiples","revenue":80851000,"units":9}]}},"2023-07":{"revenue":228029000,"momPct":-20.450652535661828,"metrics":{"topGross":"Duplex","topGrossVal":205800000,"topAbsorption":"Quads","topAbsorptionVal":63.5,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Duplex","revenue":205800000,"units":1},{"type":"Multiples","revenue":22229000,"units":2}]}},"2023-08":{"revenue":106853000,"momPct":-53.14060930846516,"metrics":{"topGross":"Multiples","topGrossVal":106853000,"topAbsorption":"Multiples","topAbsorptionVal":65.8,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":106853000,"units":10}]}},"2023-09":{"revenue":247854720,"momPct":131.95859732529738,"metrics":{"topGross":"Multiples","topGrossVal":194406720,"topAbsorption":"Multiples","topAbsorptionVal":69.5,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":194406720,"units":13},{"type":"Quads","revenue":53448000,"units":1}]}},"2023-10":{"revenue":113889000,"momPct":-54.05009838021241,"metrics":{"topGross":"Multiples","topGrossVal":92889000,"topAbsorption":"Multiples","topAbsorptionVal":71.8,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":92889000,"units":8},{"type":"Quads","revenue":21000000,"units":1}]}},"2023-11":{"revenue":85024000,"momPct":-25.34485332209432,"metrics":{"topGross":"Multiples","topGrossVal":60562000,"topAbsorption":"Multiples","topAbsorptionVal":73.0,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":60562000,"units":4},{"type":"Quads","revenue":24462000,"units":1}]}},"2023-12":{"revenue":36501000,"momPct":-57.069768535942785,"metrics":{"topGross":"Multiples","topGrossVal":36501000,"topAbsorption":"Multiples","topAbsorptionVal":73.6,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":36501000,"units":2}]}},"2024-01":{"revenue":687330100,"momPct":1783.0445741212568,"metrics":{"topGross":"Duplex","topGrossVal":414278600,"topAbsorption":"Multiples","topAbsorptionVal":75.0,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Duplex","revenue":414278600,"units":3},{"type":"Multiples","revenue":273051500,"units":5}]}},"2024-02":{"revenue":151181000,"momPct":-78.00460070059495,"metrics":{"topGross":"Privates","topGrossVal":141716000,"topAbsorption":"Multiples","topAbsorptionVal":75.3,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":9465000,"units":1},{"type":"Privates","revenue":141716000,"units":1}]}},"2024-03":{"revenue":5497000,"momPct":-96.36396107976532,"metrics":{"topGross":"Quads","topGrossVal":5497000,"topAbsorption":"Multiples","topAbsorptionVal":75.3,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Quads","revenue":5497000,"units":1}]}},"2024-04":{"revenue":81171000,"momPct":1376.6418046207023,"metrics":{"topGross":"Duplex","topGrossVal":81171000,"topAbsorption":"Multiples","topAbsorptionVal":75.3,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Duplex","revenue":81171000,"units":1}]}},"2024-06":{"revenue":99207000,"momPct":22.219758288058532,"metrics":{"topGross":"Multiples","topGrossVal":99207000,"topAbsorption":"Multiples","topAbsorptionVal":75.6,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":99207000,"units":1}]}},"2024-07":{"revenue":85037000,"momPct":-14.283266301773057,"metrics":{"topGross":"Multiples","topGrossVal":85037000,"topAbsorption":"Multiples","topAbsorptionVal":76.7,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":85037000,"units":4}]}},"2024-08":{"revenue":310989000,"momPct":265.7102202570646,"metrics":{"topGross":"Duplex","topGrossVal":267217000,"topAbsorption":"Multiples","topAbsorptionVal":77.3,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Duplex","revenue":267217000,"units":2},{"type":"Multiples","revenue":43772000,"units":2}]}},"2024-09":{"revenue":104252000,"momPct":-66.47727090025693,"metrics":{"topGross":"Multiples","topGrossVal":104252000,"topAbsorption":"Multiples","topAbsorptionVal":78.4,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":104252000,"units":4}]}},"2024-10":{"revenue":466215000,"momPct":347.20005371599586,"metrics":{"topGross":"Quads","topGrossVal":298494000,"topAbsorption":"Multiples","topAbsorptionVal":78.7,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Duplex","revenue":126653000,"units":1},{"type":"Multiples","revenue":41068000,"units":1},{"type":"Quads","revenue":298494000,"units":2}]}},"2024-11":{"revenue":329558000,"momPct":-29.312012698004143,"metrics":{"topGross":"Duplex","topGrossVal":312682000,"topAbsorption":"Multiples","topAbsorptionVal":78.7,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Duplex","revenue":312682000,"units":2},{"type":"Quads","revenue":16876000,"units":1}]}},"2025-01":{"revenue":70903000,"momPct":-78.48542593412996,"metrics":{"topGross":"Multiples","topGrossVal":53637000,"topAbsorption":"Multiples","topAbsorptionVal":79.6,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":53637000,"units":3},{"type":"Quads","revenue":17266000,"units":1}]}},"2025-02":{"revenue":121430000,"momPct":71.2621468767189,"metrics":{"topGross":"Quads","topGrossVal":121430000,"topAbsorption":"Multiples","topAbsorptionVal":79.6,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Quads","revenue":121430000,"units":1}]}},"2025-03":{"revenue":306572000,"momPct":152.46808861072222,"metrics":{"topGross":"Duplex","topGrossVal":277839000,"topAbsorption":"Duplex","topAbsorptionVal":82.4,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Duplex","revenue":277839000,"units":2},{"type":"Multiples","revenue":28733000,"units":3}]}},"2025-05":{"revenue":11403000,"momPct":-96.28048223582061,"metrics":{"topGross":"Multiples","topGrossVal":11403000,"topAbsorption":"Duplex","topAbsorptionVal":82.4,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":11403000,"units":1}]}},"2025-06":{"revenue":1114866000,"momPct":9676.953433307024,"metrics":{"topGross":"Privates","topGrossVal":962700000,"topAbsorption":"Duplex","topAbsorptionVal":88.2,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Duplex","revenue":148249000,"units":1},{"type":"Multiples","revenue":3917000,"units":1},{"type":"Privates","revenue":962700000,"units":1}]}},"2025-07":{"revenue":86228000,"momPct":-92.26561757197726,"metrics":{"topGross":"Multiples","topGrossVal":62067000,"topAbsorption":"Duplex","topAbsorptionVal":88.2,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":62067000,"units":3},{"type":"Quads","revenue":24161000,"units":1}]}},"2025-08":{"revenue":126013000,"momPct":46.13930509811197,"metrics":{"topGross":"Duplex","topGrossVal":117648000,"topAbsorption":"Duplex","topAbsorptionVal":94.1,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Duplex","revenue":117648000,"units":1},{"type":"Multiples","revenue":8365000,"units":1}]}},"2025-09":{"revenue":3354000,"momPct":-97.33836985072969,"metrics":{"topGross":"Multiples","topGrossVal":3354000,"topAbsorption":"Duplex","topAbsorptionVal":94.1,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":3354000,"units":1}]}},"2025-10":{"revenue":2102000,"momPct":-37.328562909958265,"metrics":{"topGross":"Multiples","topGrossVal":2102000,"topAbsorption":"Duplex","topAbsorptionVal":94.1,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":2102000,"units":1}]}},"2025-11":{"revenue":309558000,"momPct":14626.831588962892,"metrics":{"topGross":"Quads","topGrossVal":233467000,"topAbsorption":"Duplex","topAbsorptionVal":94.1,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":76091000,"units":3},{"type":"Quads","revenue":233467000,"units":4}]}},"2025-12":{"revenue":89929000,"momPct":-70.9492243779841,"metrics":{"topGross":"Quads","topGrossVal":57271000,"topAbsorption":"Duplex","topAbsorptionVal":94.1,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":32658000,"units":2},{"type":"Quads","revenue":57271000,"units":2}]}},"2026-01":{"revenue":883274000,"momPct":882.1903946446641,"metrics":{"topGross":"Privates","topGrossVal":609422000,"topAbsorption":"Duplex","topAbsorptionVal":94.1,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":119100000,"units":5},{"type":"Privates","revenue":609422000,"units":2},{"type":"Quads","revenue":154752000,"units":1}]}},"2026-02":{"revenue":113122000,"momPct":-87.19287559692688,"metrics":{"topGross":"Privates","topGrossVal":77971000,"topAbsorption":"Duplex","topAbsorptionVal":94.1,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":31851000,"units":2},{"type":"Privates","revenue":77971000,"units":1},{"type":"Quads","revenue":3300000,"units":1}]}},"2026-03":{"revenue":299229000,"momPct":164.51883806863384,"metrics":{"topGross":"Quads","topGrossVal":163972000,"topAbsorption":"Duplex","topAbsorptionVal":94.1,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":135257000,"units":8},{"type":"Quads","revenue":163972000,"units":1}]}},"2026-04":{"revenue":989896000,"momPct":230.81552924348912,"metrics":{"topGross":"Privates","topGrossVal":639300000,"topAbsorption":"Privates","topAbsorptionVal":100.0,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":137461000,"units":8},{"type":"Privates","revenue":639300000,"units":1},{"type":"Quads","revenue":213135000,"units":2}]}},"2026-05":{"revenue":134427000,"momPct":-86.42008857496141,"metrics":{"topGross":"Multiples","topGrossVal":114330000,"topAbsorption":"Privates","topAbsorptionVal":100.0,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Multiples","revenue":114330000,"units":7},{"type":"Quads","revenue":20097000,"units":1}]}},"2026-06":{"revenue":703789000,"momPct":423.54735283834344,"metrics":{"topGross":"Multiples","topGrossVal":594520000,"topAbsorption":"Duplex","topAbsorptionVal":100.0,"fastestSell":null,"fastestSellDays":null,"barData":[{"type":"Duplex","revenue":86205000,"units":1},{"type":"Multiples","revenue":594520000,"units":10},{"type":"Quads","revenue":23064000,"units":1}]}}},"monthlyPies":{"2019-11":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":13,"hold":5,"available":14},"valueCounts":{"sold":40410000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2019-12":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":9,"hold":5,"available":14},"valueCounts":{"sold":27403650,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":16756000,"hold":0,"available":0}}},"2020-01":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":6,"hold":5,"available":14},"valueCounts":{"sold":20956000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2020-02":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":4,"hold":5,"available":14},"valueCounts":{"sold":11794000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":18445000,"hold":0,"available":0}}},"2020-03":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":1,"hold":5,"available":14},"valueCounts":{"sold":3879000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2020-05":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":4,"hold":5,"available":14},"valueCounts":{"sold":11247000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":14583000,"hold":0,"available":0}}},"2020-07":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":2,"hold":5,"available":14},"valueCounts":{"sold":9090000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2020-08":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":0,"hold":5,"available":14},"valueCounts":{"sold":0,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":2,"hold":0,"available":0},"valueCounts":{"sold":39450000,"hold":0,"available":0}}},"2020-09":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":3,"hold":5,"available":14},"valueCounts":{"sold":11487000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":15314000,"hold":0,"available":0}}},"2020-10":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":19,"hold":5,"available":14},"valueCounts":{"sold":68589000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":5,"hold":1,"available":0},"valueCounts":{"sold":776945000,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2020-11":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":4,"hold":5,"available":14},"valueCounts":{"sold":20748000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2021-01":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":2,"hold":5,"available":14},"valueCounts":{"sold":6494000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":1,"hold":1,"available":0},"valueCounts":{"sold":91650000,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2021-02":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":3,"hold":5,"available":14},"valueCounts":{"sold":16818000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":5,"hold":0,"available":0},"valueCounts":{"sold":141926330,"hold":0,"available":0}}},"2021-03":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":1,"hold":5,"available":14},"valueCounts":{"sold":2878000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":32507000,"hold":0,"available":0}}},"2021-04":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":1,"hold":5,"available":14},"valueCounts":{"sold":3777000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":3,"hold":0,"available":0},"valueCounts":{"sold":115728000,"hold":0,"available":0}}},"2021-05":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":1,"hold":5,"available":14},"valueCounts":{"sold":9984000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2021-06":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":2,"hold":5,"available":14},"valueCounts":{"sold":7271000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":19444000,"hold":0,"available":0}}},"2021-08":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":2,"hold":5,"available":14},"valueCounts":{"sold":6372000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2021-09":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":6,"hold":5,"available":14},"valueCounts":{"sold":24882000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2021-10":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":7,"hold":5,"available":14},"valueCounts":{"sold":39988000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":2,"hold":0,"available":0},"valueCounts":{"sold":50726000,"hold":0,"available":0}}},"2021-11":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":4,"hold":5,"available":14},"valueCounts":{"sold":14645560,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":5,"hold":0,"available":0},"valueCounts":{"sold":128613000,"hold":0,"available":0}}},"2021-12":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":1,"hold":5,"available":14},"valueCounts":{"sold":4176000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2022-01":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":2,"hold":5,"available":14},"valueCounts":{"sold":7457000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":20616000,"hold":0,"available":0}}},"2022-02":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":4,"hold":5,"available":14},"valueCounts":{"sold":11584000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":2,"hold":0,"available":0},"valueCounts":{"sold":57890000,"hold":0,"available":0}}},"2022-03":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":16,"hold":5,"available":14},"valueCounts":{"sold":74530000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2022-04":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":0,"hold":5,"available":14},"valueCounts":{"sold":0,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":28365000,"hold":0,"available":0}}},"2022-05":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":3,"hold":5,"available":14},"valueCounts":{"sold":17745000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":3,"hold":0,"available":0},"valueCounts":{"sold":167915000,"hold":0,"available":0}}},"2022-06":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":3,"hold":5,"available":14},"valueCounts":{"sold":18325000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":32247000,"hold":0,"available":0}}},"2022-07":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":5,"hold":5,"available":14},"valueCounts":{"sold":21581000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":2,"hold":0,"available":0},"valueCounts":{"sold":69284000,"hold":0,"available":0}}},"2022-08":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":9,"hold":5,"available":14},"valueCounts":{"sold":57537000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":2,"hold":0,"available":0},"valueCounts":{"sold":65146000,"hold":0,"available":0}}},"2022-09":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":6,"hold":5,"available":14},"valueCounts":{"sold":35131000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":1,"hold":1,"available":0},"valueCounts":{"sold":186682000,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2022-10":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":20,"hold":5,"available":14},"valueCounts":{"sold":151486000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":40640000,"hold":0,"available":0}}},"2022-11":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":5,"hold":5,"available":14},"valueCounts":{"sold":37829000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":1,"hold":1,"available":0},"valueCounts":{"sold":175200000,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":2,"hold":0,"available":0},"valueCounts":{"sold":112377000,"hold":0,"available":0}}},"2022-12":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":13,"hold":5,"available":14},"valueCounts":{"sold":91164000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":2,"hold":0,"available":0},"valueCounts":{"sold":79906000,"hold":0,"available":0}}},"2023-01":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":3,"hold":5,"available":14},"valueCounts":{"sold":80376000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2023-02":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":4,"hold":5,"available":14},"valueCounts":{"sold":45423000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2023-03":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":6,"hold":5,"available":14},"valueCounts":{"sold":47779000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2023-04":{"Duplex":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":41968000,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":5,"hold":5,"available":14},"valueCounts":{"sold":40938000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2023-05":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":9,"hold":5,"available":14},"valueCounts":{"sold":89288000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2023-06":{"Duplex":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":205800000,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":9,"hold":5,"available":14},"valueCounts":{"sold":80851000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2023-07":{"Duplex":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":205800000,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":2,"hold":5,"available":14},"valueCounts":{"sold":22229000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2023-08":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":10,"hold":5,"available":14},"valueCounts":{"sold":106853000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2023-09":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":13,"hold":5,"available":14},"valueCounts":{"sold":194406720,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":53448000,"hold":0,"available":0}}},"2023-10":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":8,"hold":5,"available":14},"valueCounts":{"sold":92889000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":21000000,"hold":0,"available":0}}},"2023-11":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":4,"hold":5,"available":14},"valueCounts":{"sold":60562000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":24462000,"hold":0,"available":0}}},"2023-12":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":2,"hold":5,"available":14},"valueCounts":{"sold":36501000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2024-01":{"Duplex":{"unitCounts":{"sold":3,"hold":0,"available":0},"valueCounts":{"sold":414278600,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":5,"hold":5,"available":14},"valueCounts":{"sold":273051500,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2024-02":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":1,"hold":5,"available":14},"valueCounts":{"sold":9465000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":1,"hold":1,"available":0},"valueCounts":{"sold":141716000,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2024-03":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":0,"hold":5,"available":14},"valueCounts":{"sold":0,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":5497000,"hold":0,"available":0}}},"2024-04":{"Duplex":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":81171000,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":0,"hold":5,"available":14},"valueCounts":{"sold":0,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2024-06":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":1,"hold":5,"available":14},"valueCounts":{"sold":99207000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2024-07":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":4,"hold":5,"available":14},"valueCounts":{"sold":85037000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2024-08":{"Duplex":{"unitCounts":{"sold":2,"hold":0,"available":0},"valueCounts":{"sold":267217000,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":2,"hold":5,"available":14},"valueCounts":{"sold":43772000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2024-09":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":4,"hold":5,"available":14},"valueCounts":{"sold":104252000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2024-10":{"Duplex":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":126653000,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":1,"hold":5,"available":14},"valueCounts":{"sold":41068000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":2,"hold":0,"available":0},"valueCounts":{"sold":298494000,"hold":0,"available":0}}},"2024-11":{"Duplex":{"unitCounts":{"sold":2,"hold":0,"available":0},"valueCounts":{"sold":312682000,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":0,"hold":5,"available":14},"valueCounts":{"sold":0,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":16876000,"hold":0,"available":0}}},"2025-01":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":3,"hold":5,"available":14},"valueCounts":{"sold":53637000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":17266000,"hold":0,"available":0}}},"2025-02":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":0,"hold":5,"available":14},"valueCounts":{"sold":0,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":121430000,"hold":0,"available":0}}},"2025-03":{"Duplex":{"unitCounts":{"sold":2,"hold":0,"available":0},"valueCounts":{"sold":277839000,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":3,"hold":5,"available":14},"valueCounts":{"sold":28733000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2025-05":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":1,"hold":5,"available":14},"valueCounts":{"sold":11403000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2025-06":{"Duplex":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":148249000,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":1,"hold":5,"available":14},"valueCounts":{"sold":3917000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":1,"hold":1,"available":0},"valueCounts":{"sold":962700000,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2025-07":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":3,"hold":5,"available":14},"valueCounts":{"sold":62067000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":24161000,"hold":0,"available":0}}},"2025-08":{"Duplex":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":117648000,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":1,"hold":5,"available":14},"valueCounts":{"sold":8365000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2025-09":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":1,"hold":5,"available":14},"valueCounts":{"sold":3354000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2025-10":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":1,"hold":5,"available":14},"valueCounts":{"sold":2102000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}}},"2025-11":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":3,"hold":5,"available":14},"valueCounts":{"sold":76091000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":4,"hold":0,"available":0},"valueCounts":{"sold":233467000,"hold":0,"available":0}}},"2025-12":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":2,"hold":5,"available":14},"valueCounts":{"sold":32658000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":2,"hold":0,"available":0},"valueCounts":{"sold":57271000,"hold":0,"available":0}}},"2026-01":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":5,"hold":5,"available":14},"valueCounts":{"sold":119100000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":2,"hold":1,"available":0},"valueCounts":{"sold":609422000,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":154752000,"hold":0,"available":0}}},"2026-02":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":2,"hold":5,"available":14},"valueCounts":{"sold":31851000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":1,"hold":1,"available":0},"valueCounts":{"sold":77971000,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":3300000,"hold":0,"available":0}}},"2026-03":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":8,"hold":5,"available":14},"valueCounts":{"sold":135257000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":163972000,"hold":0,"available":0}}},"2026-04":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":8,"hold":5,"available":14},"valueCounts":{"sold":137461000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":1,"hold":1,"available":0},"valueCounts":{"sold":639300000,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":2,"hold":0,"available":0},"valueCounts":{"sold":213135000,"hold":0,"available":0}}},"2026-05":{"Duplex":{"unitCounts":{"sold":0,"hold":0,"available":0},"valueCounts":{"sold":0,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":7,"hold":5,"available":14},"valueCounts":{"sold":114330000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":20097000,"hold":0,"available":0}}},"2026-06":{"Duplex":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":86205000,"hold":0,"available":0}},"Multiples":{"unitCounts":{"sold":10,"hold":5,"available":14},"valueCounts":{"sold":594520000,"hold":170785000,"available":458920000}},"Privates":{"unitCounts":{"sold":0,"hold":1,"available":0},"valueCounts":{"sold":0,"hold":592125000,"available":0}},"Quads":{"unitCounts":{"sold":1,"hold":0,"available":0},"valueCounts":{"sold":23064000,"hold":0,"available":0}}}},"allTimeSummary":{"Duplex":{"avgBUA":700.1,"avgSalesValue":134441800.0,"avgPriceSqm":192027.0,"unitCounts":{"sold":17,"hold":0,"available":0},"valueCounts":{"sold":2285510600,"hold":0,"available":0}},"Multiples":{"avgBUA":113.0,"avgSalesValue":12472987.0,"avgPriceSqm":110375.0,"unitCounts":{"sold":334,"hold":5,"available":14},"valueCounts":{"sold":3881679430,"hold":170785000,"available":458920000}},"Privates":{"avgBUA":3994.4,"avgSalesValue":261541857.0,"avgPriceSqm":65477.0,"unitCounts":{"sold":14,"hold":1,"available":0},"valueCounts":{"sold":3661586000,"hold":592125000,"available":0}},"Quads":{"avgBUA":646.1,"avgSalesValue":43167783.0,"avgPriceSqm":66815.0,"unitCounts":{"sold":63,"hold":0,"available":0},"valueCounts":{"sold":2719570330,"hold":0,"available":0}}}};
+var PM={"Duplex":[{"month":"2019-11","units":0,"revenue":0},{"month":"2019-12","units":0,"revenue":0},{"month":"2020-01","units":0,"revenue":0},{"month":"2020-02","units":0,"revenue":0},{"month":"2020-03","units":0,"revenue":0},{"month":"2020-04","units":0,"revenue":0},{"month":"2020-05","units":0,"revenue":0},{"month":"2020-06","units":0,"revenue":0},{"month":"2020-07","units":0,"revenue":0},{"month":"2020-08","units":0,"revenue":0},{"month":"2020-09","units":0,"revenue":0},{"month":"2020-10","units":0,"revenue":0},{"month":"2020-11","units":0,"revenue":0},{"month":"2020-12","units":0,"revenue":0},{"month":"2021-01","units":0,"revenue":0},{"month":"2021-02","units":0,"revenue":0},{"month":"2021-03","units":0,"revenue":0},{"month":"2021-04","units":0,"revenue":0},{"month":"2021-05","units":0,"revenue":0},{"month":"2021-06","units":0,"revenue":0},{"month":"2021-07","units":0,"revenue":0},{"month":"2021-08","units":0,"revenue":0},{"month":"2021-09","units":0,"revenue":0},{"month":"2021-10","units":0,"revenue":0},{"month":"2021-11","units":0,"revenue":0},{"month":"2021-12","units":0,"revenue":0},{"month":"2022-01","units":0,"revenue":0},{"month":"2022-02","units":0,"revenue":0},{"month":"2022-03","units":0,"revenue":0},{"month":"2022-04","units":0,"revenue":0},{"month":"2022-05","units":0,"revenue":0},{"month":"2022-06","units":0,"revenue":0},{"month":"2022-07","units":0,"revenue":0},{"month":"2022-08","units":0,"revenue":0},{"month":"2022-09","units":0,"revenue":0},{"month":"2022-10","units":0,"revenue":0},{"month":"2022-11","units":0,"revenue":0},{"month":"2022-12","units":0,"revenue":0},{"month":"2023-01","units":0,"revenue":0},{"month":"2023-02","units":0,"revenue":0},{"month":"2023-03","units":0,"revenue":0},{"month":"2023-04","units":1,"revenue":41968000},{"month":"2023-05","units":0,"revenue":0},{"month":"2023-06","units":1,"revenue":205800000},{"month":"2023-07","units":1,"revenue":205800000},{"month":"2023-08","units":0,"revenue":0},{"month":"2023-09","units":0,"revenue":0},{"month":"2023-10","units":0,"revenue":0},{"month":"2023-11","units":0,"revenue":0},{"month":"2023-12","units":0,"revenue":0},{"month":"2024-01","units":3,"revenue":414278600},{"month":"2024-02","units":0,"revenue":0},{"month":"2024-03","units":0,"revenue":0},{"month":"2024-04","units":1,"revenue":81171000},{"month":"2024-06","units":0,"revenue":0},{"month":"2024-07","units":0,"revenue":0},{"month":"2024-08","units":2,"revenue":267217000},{"month":"2024-09","units":0,"revenue":0},{"month":"2024-10","units":1,"revenue":126653000},{"month":"2024-11","units":2,"revenue":312682000},{"month":"2025-01","units":0,"revenue":0},{"month":"2025-02","units":0,"revenue":0},{"month":"2025-03","units":2,"revenue":277839000},{"month":"2025-05","units":0,"revenue":0},{"month":"2025-06","units":1,"revenue":148249000},{"month":"2025-07","units":0,"revenue":0},{"month":"2025-08","units":1,"revenue":117648000},{"month":"2025-09","units":0,"revenue":0},{"month":"2025-10","units":0,"revenue":0},{"month":"2025-11","units":0,"revenue":0},{"month":"2025-12","units":0,"revenue":0},{"month":"2026-01","units":0,"revenue":0},{"month":"2026-02","units":0,"revenue":0},{"month":"2026-03","units":0,"revenue":0},{"month":"2026-04","units":0,"revenue":0},{"month":"2026-05","units":0,"revenue":0},{"month":"2026-06","units":1,"revenue":86205000}],"Multiples":[{"month":"2019-11","units":1,"revenue":3789000},{"month":"2019-12","units":21,"revenue":58213000},{"month":"2020-01","units":6,"revenue":17231650},{"month":"2020-02","units":9,"revenue":31468000},{"month":"2020-03","units":2,"revenue":5775000},{"month":"2020-04","units":3,"revenue":11806000},{"month":"2020-05","units":1,"revenue":2344000},{"month":"2020-06","units":3,"revenue":8903000},{"month":"2020-07","units":1,"revenue":5916000},{"month":"2020-08","units":1,"revenue":3174000},{"month":"2020-09","units":4,"revenue":14146000},{"month":"2020-10","units":10,"revenue":31846000},{"month":"2020-11","units":7,"revenue":30899000},{"month":"2020-12","units":7,"revenue":26996000},{"month":"2021-01","units":2,"revenue":6126000},{"month":"2021-02","units":6,"revenue":27721000},{"month":"2021-03","units":2,"revenue":8412000},{"month":"2021-04","units":1,"revenue":3777000},{"month":"2021-05","units":0,"revenue":0},{"month":"2021-06","units":1,"revenue":3640000},{"month":"2021-07","units":2,"revenue":7271000},{"month":"2021-08","units":0,"revenue":0},{"month":"2021-09","units":8,"revenue":33079000},{"month":"2021-10","units":6,"revenue":34868000},{"month":"2021-11","units":7,"revenue":38661560},{"month":"2021-12","units":0,"revenue":0},{"month":"2022-01","units":6,"revenue":22493000},{"month":"2022-02","units":1,"revenue":5646000},{"month":"2022-03","units":10,"revenue":49980000},{"month":"2022-04","units":5,"revenue":21928000},{"month":"2022-05","units":3,"revenue":15375000},{"month":"2022-06","units":3,"revenue":16545000},{"month":"2022-07","units":6,"revenue":29821000},{"month":"2022-08","units":9,"revenue":55701000},{"month":"2022-09","units":8,"revenue":48662000},{"month":"2022-10","units":15,"revenue":92836000},{"month":"2022-11","units":9,"revenue":91934000},{"month":"2022-12","units":6,"revenue":34336000},{"month":"2023-01","units":12,"revenue":94559000},{"month":"2023-02","units":4,"revenue":38632000},{"month":"2023-03","units":8,"revenue":128082000},{"month":"2023-04","units":4,"revenue":40744000},{"month":"2023-05","units":11,"revenue":117699000},{"month":"2023-06","units":11,"revenue":106171000},{"month":"2023-07","units":2,"revenue":18238000},{"month":"2023-08","units":8,"revenue":94662000},{"month":"2023-09","units":11,"revenue":163844720},{"month":"2023-10","units":12,"revenue":156812000},{"month":"2023-11","units":6,"revenue":83749000},{"month":"2023-12","units":2,"revenue":36501000},{"month":"2024-01","units":4,"revenue":262427500},{"month":"2024-02","units":0,"revenue":0},{"month":"2024-03","units":0,"revenue":0},{"month":"2024-04","units":0,"revenue":0},{"month":"2024-06","units":1,"revenue":99207000},{"month":"2024-07","units":3,"revenue":80976000},{"month":"2024-08","units":2,"revenue":43772000},{"month":"2024-09","units":3,"revenue":102153000},{"month":"2024-10","units":1,"revenue":41068000},{"month":"2024-11","units":0,"revenue":0},{"month":"2025-01","units":2,"revenue":49813000},{"month":"2025-02","units":0,"revenue":0},{"month":"2025-03","units":0,"revenue":0},{"month":"2025-05","units":0,"revenue":0},{"month":"2025-06","units":0,"revenue":0},{"month":"2025-07","units":1,"revenue":42368000},{"month":"2025-08","units":0,"revenue":0},{"month":"2025-09","units":0,"revenue":0},{"month":"2025-10","units":0,"revenue":0},{"month":"2025-11","units":3,"revenue":76091000},{"month":"2025-12","units":0,"revenue":0},{"month":"2026-01","units":4,"revenue":134215000},{"month":"2026-02","units":1,"revenue":21580000},{"month":"2026-03","units":4,"revenue":106215000},{"month":"2026-04","units":6,"revenue":121923000},{"month":"2026-05","units":5,"revenue":98711000},{"month":"2026-06","units":10,"revenue":594520000}],"Privates":[{"month":"2019-11","units":0,"revenue":0},{"month":"2019-12","units":0,"revenue":0},{"month":"2020-01","units":0,"revenue":0},{"month":"2020-02","units":0,"revenue":0},{"month":"2020-03","units":0,"revenue":0},{"month":"2020-04","units":0,"revenue":0},{"month":"2020-05","units":0,"revenue":0},{"month":"2020-06","units":0,"revenue":0},{"month":"2020-07","units":0,"revenue":0},{"month":"2020-08","units":0,"revenue":0},{"month":"2020-09","units":0,"revenue":0},{"month":"2020-10","units":6,"revenue":850542000},{"month":"2020-11","units":0,"revenue":0},{"month":"2020-12","units":2,"revenue":282012000},{"month":"2021-01","units":0,"revenue":0},{"month":"2021-02","units":1,"revenue":91650000},{"month":"2021-03","units":0,"revenue":0},{"month":"2021-04","units":0,"revenue":0},{"month":"2021-05","units":0,"revenue":0},{"month":"2021-06","units":0,"revenue":0},{"month":"2021-07","units":0,"revenue":0},{"month":"2021-08","units":0,"revenue":0},{"month":"2021-09","units":0,"revenue":0},{"month":"2021-10","units":0,"revenue":0},{"month":"2021-11","units":0,"revenue":0},{"month":"2021-12","units":0,"revenue":0},{"month":"2022-01","units":0,"revenue":0},{"month":"2022-02","units":0,"revenue":0},{"month":"2022-03","units":0,"revenue":0},{"month":"2022-04","units":0,"revenue":0},{"month":"2022-05","units":0,"revenue":0},{"month":"2022-06","units":0,"revenue":0},{"month":"2022-07","units":0,"revenue":0},{"month":"2022-08","units":0,"revenue":0},{"month":"2022-09","units":1,"revenue":186682000},{"month":"2022-10","units":0,"revenue":0},{"month":"2022-11","units":1,"revenue":175200000},{"month":"2022-12","units":0,"revenue":0},{"month":"2023-01","units":0,"revenue":0},{"month":"2023-02","units":0,"revenue":0},{"month":"2023-03","units":0,"revenue":0},{"month":"2023-04","units":0,"revenue":0},{"month":"2023-05","units":0,"revenue":0},{"month":"2023-06","units":0,"revenue":0},{"month":"2023-07","units":0,"revenue":0},{"month":"2023-08","units":0,"revenue":0},{"month":"2023-09","units":0,"revenue":0},{"month":"2023-10","units":0,"revenue":0},{"month":"2023-11","units":0,"revenue":0},{"month":"2023-12","units":0,"revenue":0},{"month":"2024-01","units":0,"revenue":0},{"month":"2024-02","units":0,"revenue":0},{"month":"2024-03","units":0,"revenue":0},{"month":"2024-04","units":0,"revenue":0},{"month":"2024-06","units":0,"revenue":0},{"month":"2024-07","units":0,"revenue":0},{"month":"2024-08","units":0,"revenue":0},{"month":"2024-09","units":0,"revenue":0},{"month":"2024-10","units":0,"revenue":0},{"month":"2024-11","units":0,"revenue":0},{"month":"2025-01","units":0,"revenue":0},{"month":"2025-02","units":0,"revenue":0},{"month":"2025-03","units":0,"revenue":0},{"month":"2025-05","units":0,"revenue":0},{"month":"2025-06","units":0,"revenue":0},{"month":"2025-07","units":0,"revenue":0},{"month":"2025-08","units":0,"revenue":0},{"month":"2025-09","units":1,"revenue":962700000},{"month":"2025-10","units":0,"revenue":0},{"month":"2025-11","units":0,"revenue":0},{"month":"2025-12","units":0,"revenue":0},{"month":"2026-01","units":1,"revenue":473500000},{"month":"2026-02","units":0,"revenue":0},{"month":"2026-03","units":0,"revenue":0},{"month":"2026-04","units":1,"revenue":639300000},{"month":"2026-05","units":0,"revenue":0},{"month":"2026-06","units":0,"revenue":0}],"Quads":[{"month":"2019-11","units":0,"revenue":0},{"month":"2019-12","units":3,"revenue":51414000},{"month":"2020-01","units":1,"revenue":16908000},{"month":"2020-02","units":0,"revenue":0},{"month":"2020-03","units":2,"revenue":35321000},{"month":"2020-04","units":0,"revenue":0},{"month":"2020-05","units":0,"revenue":0},{"month":"2020-06","units":1,"revenue":14583000},{"month":"2020-07","units":0,"revenue":0},{"month":"2020-08","units":2,"revenue":8797000},{"month":"2020-09","units":3,"revenue":54764000},{"month":"2020-10","units":1,"revenue":19056000},{"month":"2020-11","units":0,"revenue":0},{"month":"2020-12","units":0,"revenue":0},{"month":"2021-01","units":0,"revenue":0},{"month":"2021-02","units":6,"revenue":128696080},{"month":"2021-03","units":1,"revenue":57294250},{"month":"2021-04","units":3,"revenue":86571000},{"month":"2021-05","units":3,"revenue":110287000},{"month":"2021-06","units":1,"revenue":19444000},{"month":"2021-07","units":0,"revenue":0},{"month":"2021-08","units":0,"revenue":0},{"month":"2021-09","units":0,"revenue":0},{"month":"2021-10","units":2,"revenue":50726000},{"month":"2021-11","units":3,"revenue":73523000},{"month":"2021-12","units":2,"revenue":48846000},{"month":"2022-01","units":1,"revenue":26341000},{"month":"2022-02","units":3,"revenue":78506000},{"month":"2022-03","units":2,"revenue":61469000},{"month":"2022-04","units":1,"revenue":28365000},{"month":"2022-05","units":1,"revenue":36070000},{"month":"2022-06","units":3,"revenue":164092000},{"month":"2022-07","units":1,"revenue":33161000},{"month":"2022-08","units":3,"revenue":96287000},{"month":"2022-09","units":0,"revenue":0},{"month":"2022-10","units":1,"revenue":38215000},{"month":"2022-11","units":1,"revenue":40640000},{"month":"2022-12","units":2,"revenue":112377000},{"month":"2023-01","units":1,"revenue":62514000},{"month":"2023-02","units":0,"revenue":0},{"month":"2023-03","units":0,"revenue":0},{"month":"2023-04","units":0,"revenue":0},{"month":"2023-05","units":0,"revenue":0},{"month":"2023-06","units":0,"revenue":0},{"month":"2023-07","units":0,"revenue":0},{"month":"2023-08","units":0,"revenue":0},{"month":"2023-09","units":1,"revenue":53448000},{"month":"2023-10","units":0,"revenue":0},{"month":"2023-11","units":1,"revenue":113241000},{"month":"2023-12","units":0,"revenue":0},{"month":"2024-01","units":1,"revenue":5497000},{"month":"2024-02","units":0,"revenue":0},{"month":"2024-03","units":0,"revenue":0},{"month":"2024-04","units":0,"revenue":0},{"month":"2024-06","units":0,"revenue":0},{"month":"2024-07","units":0,"revenue":0},{"month":"2024-08","units":0,"revenue":0},{"month":"2024-09","units":0,"revenue":0},{"month":"2024-10","units":1,"revenue":185253000},{"month":"2024-11","units":0,"revenue":0},{"month":"2025-01","units":0,"revenue":0},{"month":"2025-02","units":1,"revenue":121430000},{"month":"2025-03","units":0,"revenue":0},{"month":"2025-05","units":0,"revenue":0},{"month":"2025-06","units":0,"revenue":0},{"month":"2025-07","units":0,"revenue":0},{"month":"2025-08","units":0,"revenue":0},{"month":"2025-09","units":0,"revenue":0},{"month":"2025-10","units":0,"revenue":0},{"month":"2025-11","units":0,"revenue":0},{"month":"2025-12","units":0,"revenue":0},{"month":"2026-01","units":2,"revenue":326235000},{"month":"2026-02","units":0,"revenue":0},{"month":"2026-03","units":1,"revenue":163972000},{"month":"2026-04","units":1,"revenue":196227000},{"month":"2026-05","units":0,"revenue":0},{"month":"2026-06","units":0,"revenue":0}]};
+var CG={"2019-11":{"Duplex":0,"Multiples":40410000,"Privates":0,"Quads":0},"2019-12":{"Duplex":0,"Multiples":67813650,"Privates":0,"Quads":16756000},"2020-01":{"Duplex":0,"Multiples":88769650,"Privates":0,"Quads":16756000},"2020-02":{"Duplex":0,"Multiples":100563650,"Privates":0,"Quads":35201000},"2020-03":{"Duplex":0,"Multiples":104442650,"Privates":0,"Quads":35201000},"2020-05":{"Duplex":0,"Multiples":115689650,"Privates":0,"Quads":49784000},"2020-07":{"Duplex":0,"Multiples":124779650,"Privates":0,"Quads":49784000},"2020-08":{"Duplex":0,"Multiples":124779650,"Privates":0,"Quads":89234000},"2020-09":{"Duplex":0,"Multiples":136266650,"Privates":0,"Quads":104548000},"2020-10":{"Duplex":0,"Multiples":204855650,"Privates":776945000,"Quads":104548000},"2020-11":{"Duplex":0,"Multiples":225603650,"Privates":776945000,"Quads":104548000},"2021-01":{"Duplex":0,"Multiples":232097650,"Privates":868595000,"Quads":104548000},"2021-02":{"Duplex":0,"Multiples":248915650,"Privates":868595000,"Quads":246474330},"2021-03":{"Duplex":0,"Multiples":251793650,"Privates":868595000,"Quads":278981330},"2021-04":{"Duplex":0,"Multiples":255570650,"Privates":868595000,"Quads":394709330},"2021-05":{"Duplex":0,"Multiples":265554650,"Privates":868595000,"Quads":394709330},"2021-06":{"Duplex":0,"Multiples":272825650,"Privates":868595000,"Quads":414153330},"2021-08":{"Duplex":0,"Multiples":279197650,"Privates":868595000,"Quads":414153330},"2021-09":{"Duplex":0,"Multiples":304079650,"Privates":868595000,"Quads":414153330},"2021-10":{"Duplex":0,"Multiples":344067650,"Privates":868595000,"Quads":464879330},"2021-11":{"Duplex":0,"Multiples":358713210,"Privates":868595000,"Quads":593492330},"2021-12":{"Duplex":0,"Multiples":362889210,"Privates":868595000,"Quads":593492330},"2022-01":{"Duplex":0,"Multiples":370346210,"Privates":868595000,"Quads":614108330},"2022-02":{"Duplex":0,"Multiples":381930210,"Privates":868595000,"Quads":671998330},"2022-03":{"Duplex":0,"Multiples":456460210,"Privates":868595000,"Quads":671998330},"2022-04":{"Duplex":0,"Multiples":456460210,"Privates":868595000,"Quads":700363330},"2022-05":{"Duplex":0,"Multiples":474205210,"Privates":868595000,"Quads":868278330},"2022-06":{"Duplex":0,"Multiples":492530210,"Privates":868595000,"Quads":900525330},"2022-07":{"Duplex":0,"Multiples":514111210,"Privates":868595000,"Quads":969809330},"2022-08":{"Duplex":0,"Multiples":571648210,"Privates":868595000,"Quads":1034955330},"2022-09":{"Duplex":0,"Multiples":606779210,"Privates":1055277000,"Quads":1034955330},"2022-10":{"Duplex":0,"Multiples":758265210,"Privates":1055277000,"Quads":1075595330},"2022-11":{"Duplex":0,"Multiples":796094210,"Privates":1230477000,"Quads":1187972330},"2022-12":{"Duplex":0,"Multiples":887258210,"Privates":1230477000,"Quads":1267878330},"2023-01":{"Duplex":0,"Multiples":967634210,"Privates":1230477000,"Quads":1267878330},"2023-02":{"Duplex":0,"Multiples":1013057210,"Privates":1230477000,"Quads":1267878330},"2023-03":{"Duplex":0,"Multiples":1060836210,"Privates":1230477000,"Quads":1267878330},"2023-04":{"Duplex":41968000,"Multiples":1101774210,"Privates":1230477000,"Quads":1267878330},"2023-05":{"Duplex":41968000,"Multiples":1191062210,"Privates":1230477000,"Quads":1267878330},"2023-06":{"Duplex":247768000,"Multiples":1271913210,"Privates":1230477000,"Quads":1267878330},"2023-07":{"Duplex":453568000,"Multiples":1294142210,"Privates":1230477000,"Quads":1267878330},"2023-08":{"Duplex":453568000,"Multiples":1400995210,"Privates":1230477000,"Quads":1267878330},"2023-09":{"Duplex":453568000,"Multiples":1595401930,"Privates":1230477000,"Quads":1321326330},"2023-10":{"Duplex":453568000,"Multiples":1688290930,"Privates":1230477000,"Quads":1342326330},"2023-11":{"Duplex":453568000,"Multiples":1748852930,"Privates":1230477000,"Quads":1366788330},"2023-12":{"Duplex":453568000,"Multiples":1785353930,"Privates":1230477000,"Quads":1366788330},"2024-01":{"Duplex":867846600,"Multiples":2058405430,"Privates":1230477000,"Quads":1366788330},"2024-02":{"Duplex":867846600,"Multiples":2067870430,"Privates":1372193000,"Quads":1366788330},"2024-03":{"Duplex":867846600,"Multiples":2067870430,"Privates":1372193000,"Quads":1372285330},"2024-04":{"Duplex":949017600,"Multiples":2067870430,"Privates":1372193000,"Quads":1372285330},"2024-06":{"Duplex":949017600,"Multiples":2167077430,"Privates":1372193000,"Quads":1372285330},"2024-07":{"Duplex":949017600,"Multiples":2252114430,"Privates":1372193000,"Quads":1372285330},"2024-08":{"Duplex":1216234600,"Multiples":2295886430,"Privates":1372193000,"Quads":1372285330},"2024-09":{"Duplex":1216234600,"Multiples":2400138430,"Privates":1372193000,"Quads":1372285330},"2024-10":{"Duplex":1342887600,"Multiples":2441206430,"Privates":1372193000,"Quads":1670779330},"2024-11":{"Duplex":1655569600,"Multiples":2441206430,"Privates":1372193000,"Quads":1687655330},"2025-01":{"Duplex":1655569600,"Multiples":2494843430,"Privates":1372193000,"Quads":1704921330},"2025-02":{"Duplex":1655569600,"Multiples":2494843430,"Privates":1372193000,"Quads":1826351330},"2025-03":{"Duplex":1933408600,"Multiples":2523576430,"Privates":1372193000,"Quads":1826351330},"2025-05":{"Duplex":1933408600,"Multiples":2534979430,"Privates":1372193000,"Quads":1826351330},"2025-06":{"Duplex":2081657600,"Multiples":2538896430,"Privates":2334893000,"Quads":1826351330},"2025-07":{"Duplex":2081657600,"Multiples":2600963430,"Privates":2334893000,"Quads":1850512330},"2025-08":{"Duplex":2199305600,"Multiples":2609328430,"Privates":2334893000,"Quads":1850512330},"2025-09":{"Duplex":2199305600,"Multiples":2612682430,"Privates":2334893000,"Quads":1850512330},"2025-10":{"Duplex":2199305600,"Multiples":2614784430,"Privates":2334893000,"Quads":1850512330},"2025-11":{"Duplex":2199305600,"Multiples":2690875430,"Privates":2334893000,"Quads":2083979330},"2025-12":{"Duplex":2199305600,"Multiples":2723533430,"Privates":2334893000,"Quads":2141250330},"2026-01":{"Duplex":2199305600,"Multiples":2842633430,"Privates":2944315000,"Quads":2296002330},"2026-02":{"Duplex":2199305600,"Multiples":2874484430,"Privates":3022286000,"Quads":2299302330},"2026-03":{"Duplex":2199305600,"Multiples":3009741430,"Privates":3022286000,"Quads":2463274330},"2026-04":{"Duplex":2199305600,"Multiples":3147202430,"Privates":3661586000,"Quads":2676409330},"2026-05":{"Duplex":2199305600,"Multiples":3261532430,"Privates":3661586000,"Quads":2696506330},"2026-06":{"Duplex":2285510600,"Multiples":3856052430,"Privates":3661586000,"Quads":2719570330}};
+var TC=[{"month":"2026-01","actual":883274000,"target":684588416,"cumActual":883274000,"cumTarget":684588416},{"month":"2026-02","actual":113122000,"target":78994380,"cumActual":996396000,"cumTarget":763582796},{"month":"2026-03","actual":299229000,"target":0,"cumActual":1295625000,"cumTarget":763582796},{"month":"2026-04","actual":989896000,"target":242294647,"cumActual":2285521000,"cumTarget":1005877443},{"month":"2026-05","actual":134427000,"target":113068837,"cumActual":2419948000,"cumTarget":1118946280},{"month":"2026-06","actual":703789000,"target":47277262,"cumActual":3123737000,"cumTarget":1166223542},{"month":"2026-07","actual":0,"target":18514312,"cumActual":3123737000,"cumTarget":1184737854},{"month":"2026-08","actual":0,"target":0,"cumActual":3123737000,"cumTarget":1184737854},{"month":"2026-09","actual":0,"target":213531697,"cumActual":3123737000,"cumTarget":1398269551},{"month":"2026-10","actual":0,"target":744601697,"cumActual":3123737000,"cumTarget":2142871248},{"month":"2026-11","actual":0,"target":751991697,"cumActual":3123737000,"cumTarget":2894862945},{"month":"2026-12","actual":0,"target":124840900,"cumActual":3123737000,"cumTarget":3019703845}];
+var TM=[{"type":"Privates","bua":58231,"pct":38.6,"units":15},{"type":"Quads","bua":40703,"pct":27.0,"units":63},{"type":"Multiples","bua":39962,"pct":26.5,"units":353},{"type":"Duplex","bua":11902,"pct":7.9,"units":17}];
+
+var TEAL="#00d4aa",AMBER="#f59e0b",SLATE="#64748b",RED="#f87171",BG="#0d1117",BORDER="#334155",MUTED="#94a3b8",TEXT="#e2e8f0";
+var sel=D.months[D.months.length-1],sv="allTime",absOpen=false,grossOpen=false,openProduct=null,grossView="monthly";
+
+function fmt(n){return n>=1e9?"EGP "+(n/1e9).toFixed(2)+"B":n>=1e6?"EGP "+(n/1e6).toFixed(1)+"M":"EGP "+Math.round(n).toLocaleString();}
+function fmtS(n){return n>=1e9?(n/1e9).toFixed(1)+"B":n>=1e6?(n/1e6).toFixed(0)+"M":n>=1e3?Math.round(n/1e3)+"K":""+n;}
+function fmtM(m){var p=m.split("-");return new Date(parseInt(p[0]),parseInt(p[1])-1).toLocaleString("default",{month:"short",year:"2-digit"});}
+
+function drawPie(id,vals,colors){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var total=0;
+  vals.forEach(function(v){total+=v;});
+  if(total===0){el.innerHTML="<circle cx='50' cy='50' r='28' fill='none' stroke='#334155' stroke-width='12'/><text x='50' y='54' text-anchor='middle' font-size='8' fill='#64748b'>No data</text>";return;}
+  var nonZero=vals.filter(function(v){return v>0;}).length;
+  var cx=50,cy=50,r=34,ir=22,angle=-Math.PI/2,slices="";
+  vals.forEach(function(val,i){
+    if(val<=0)return;
+    if(nonZero===1){slices+="<circle cx='"+cx+"' cy='"+cy+"' r='"+(r+ir)/2+"' fill='none' stroke='"+colors[i]+"' stroke-width='"+(r-ir)+"' opacity='0.9'/>";return;}
+    var sweep=val/total*Math.PI*2;
+    var x1=cx+r*Math.cos(angle),y1=cy+r*Math.sin(angle);
+    var x2=cx+r*Math.cos(angle+sweep),y2=cy+r*Math.sin(angle+sweep);
+    var xi1=cx+ir*Math.cos(angle),yi1=cy+ir*Math.sin(angle);
+    var xi2=cx+ir*Math.cos(angle+sweep),yi2=cy+ir*Math.sin(angle+sweep);
+    var lg=sweep>Math.PI?1:0;
+    slices+="<path d='M"+xi1+","+yi1+" L"+x1+","+y1+" A"+r+","+r+" 0 "+lg+" 1 "+x2+","+y2+" L"+xi2+","+yi2+" A"+ir+","+ir+" 0 "+lg+" 0 "+xi1+","+yi1+"' fill='"+colors[i]+"' opacity='0.9'/>";
+    angle+=sweep;
+  });
+  el.innerHTML=slices;
+}
+
+function drawColChart(containerId,pmData,accessor,color,yFmt){
+  var WINDOW=12; // show 12 months at a time
+  var total=pmData.length;
+  var stateKey="colOffset_"+containerId;
+  if(typeof window[stateKey]==="undefined"){
+    // Default to window with most non-zero values
+    var bestOffset=0, bestScore=0;
+    for(var oi=0;oi<=total-WINDOW;oi++){
+      var score=pmData.slice(oi,oi+WINDOW).filter(function(d){return accessor(d)>0;}).length;
+      if(score>bestScore){bestScore=score;bestOffset=oi;}
+    }
+    window[stateKey]=bestOffset;
+  }
+  var offset=window[stateKey];
+  var slice=pmData.slice(offset,offset+WINDOW);
+
+  var vals=slice.map(accessor);
+  var maxV=0;
+  vals.forEach(function(v){if(v>maxV)maxV=v;});
+  if(!maxV)maxV=1;
+
+  var H=120,PT=10,PB=26,PL=38,svgW=480;
+  var bW=Math.floor((svgW-PL-10)/WINDOW)-6;
+  var grid="",bars="",labels="";
+
+  for(var s=0;s<=4;s++){
+    var yy=PT+(H-PT-PB)*s/4;
+    var v=Math.round(maxV*(1-s/4));
+    grid+="<line x1='"+PL+"' y1='"+yy+"' x2='"+svgW+"' y2='"+yy+"' stroke='"+BORDER+"' stroke-width='0.5'/>";
+    grid+="<text x='"+(PL-3)+"' y='"+(yy+3)+"' text-anchor='end' font-size='7' fill='"+MUTED+"'>"+(yFmt?yFmt(v):v)+"</text>";
+  }
+  slice.forEach(function(d,i){
+    var val=accessor(d);
+    var h=Math.max((H-PT-PB)*val/maxV,val>0?2:0);
+    var x=PL+i*(bW+6);
+    bars+="<rect x='"+x+"' y='"+(H-PB-h)+"' width='"+bW+"' height='"+h+"' fill='"+color+"' opacity='0.85' rx='2'/>";
+    if(val>0)bars+="<text x='"+(x+bW/2)+"' y='"+(H-PB-h-3)+"' text-anchor='middle' font-size='7' fill='"+color+"'>"+(yFmt?yFmt(val):val)+"</text>";
+    labels+="<text x='"+(x+bW/2)+"' y='"+(H-PB+10)+"' text-anchor='middle' font-size='7' fill='"+MUTED+"'>"+fmtM(d.month)+"</text>";
+  });
+
+  var canPrev=offset>0;
+  var canNext=offset+WINDOW<total;
+  var navStyle="background:none;border:1px solid #334155;border-radius:6px;color:#e2e8f0;cursor:pointer;padding:2px 10px;font-size:13px;";
+  var disStyle="background:none;border:1px solid #1e293b;border-radius:6px;color:#334155;cursor:default;padding:2px 10px;font-size:13px;";
+  var prevId="prev_"+containerId, nextId="next_"+containerId;
+  var nav="<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;'>";
+  nav+="<button id='"+prevId+"' style='"+(canPrev?navStyle:disStyle)+"'"+(canPrev?"":" disabled")+">&#9664;</button>";
+  nav+="<span style='font-size:9px;color:#64748b;letter-spacing:1px;'>"+(offset+1)+" &ndash; "+(Math.min(offset+WINDOW,total))+" of "+total+" months</span>";
+  nav+="<button id='"+nextId+"' style='"+(canNext?navStyle:disStyle)+"'"+(canNext?"":" disabled")+">&#9654;</button>";
+  nav+="</div>";
+
+  document.getElementById(containerId).innerHTML=nav+"<svg viewBox='0 0 "+svgW+" "+H+"' style='width:100%;height:"+H+"px;overflow:visible'>"+grid+bars+labels+"</svg>";
+  // Wire nav buttons after DOM update
+  var prevBtn=document.getElementById(prevId);
+  var nextBtn=document.getElementById(nextId);
+  if(prevBtn&&canPrev) prevBtn.addEventListener("click",(function(cid,tot){return function(){colSlide(cid,tot,-1);};})(containerId,total));
+  if(nextBtn&&canNext) nextBtn.addEventListener("click",(function(cid,tot){return function(){colSlide(cid,tot,1);};})(containerId,total));
+}
+
+function colSlide(containerId,total,dir){
+  var WINDOW=12;
+  var stateKey="colOffset_"+containerId;
+  if(typeof window[stateKey]==="undefined") window[stateKey]=Math.max(0,total-WINDOW);
+  window[stateKey]=Math.max(0,Math.min(window[stateKey]+dir*WINDOW,total-WINDOW));
+  if(openProduct) drawProductBreakdown(openProduct);
+}
+
+var targetView="monthly";
+
+function setTargetView(v){
+  targetView=v;
+  document.getElementById("btnTgtMonthly").classList.toggle("active",v==="monthly");
+  document.getElementById("btnTgtCumulative").classList.toggle("active",v==="cumulative");
+  drawTargetChart();
+}
+
+function drawTargetChart(){
+  var isMonthly=targetView==="monthly";
+  var actKey=isMonthly?"actual":"cumActual";
+  var tgtKey=isMonthly?"target":"cumTarget";
+  var maxVal=0;
+  TC.forEach(function(d){if(d[actKey]>maxVal)maxVal=d[actKey];if(d[tgtKey]>maxVal)maxVal=d[tgtKey];});
+  if(!maxVal)maxVal=1;
+
+  var totalActual=0,totalTarget=0;
+  TC.forEach(function(d){totalActual+=d.actual;totalTarget+=d.target;});
+  var pct=totalTarget>0?Math.round(totalActual/totalTarget*100):0;
+  var sc=pct>=100?TEAL:pct>=75?AMBER:RED;
+  document.getElementById("tgtSummary").innerHTML="YTD: <span style='color:"+sc+";font-weight:700'>"+fmt(totalActual)+"</span> vs target <span style='font-weight:700;color:#94a3b8'>"+fmt(totalTarget)+"</span> &mdash; <span style='color:"+sc+";font-weight:700'>"+pct+"%</span>";
+
+  var bW=Math.max(22,Math.floor(560/TC.length)-8),gap=4,H=160,PT=14,PB=28,PL=44,slotW=bW*2+gap+4;
+  bW=Math.max(bW,22);
+  var svgW=Math.max(TC.length*slotW+PL+10,300);
+  var grid="",bars="",lines="",labels="";
+  var actPts=[],tgtPts=[];
+
+  for(var s=0;s<=4;s++){
+    var yy=PT+(H-PT-PB)*s/4;
+    var v=Math.round(maxVal*(1-s/4));
+    grid+="<line x1='"+PL+"' y1='"+yy+"' x2='"+svgW+"' y2='"+yy+"' stroke='"+BORDER+"' stroke-width='0.5'/>";
+    grid+="<text x='"+(PL-3)+"' y='"+(yy+3)+"' text-anchor='end' font-size='7' fill='"+MUTED+"'>"+fmtS(v)+"</text>";
+  }
+
+  TC.forEach(function(d,i){
+    var x=PL+i*slotW;
+    var midX=x+slotW/2;
+    var tgtH=Math.max((H-PT-PB)*d[tgtKey]/maxVal,2);
+    var actH=Math.max((H-PT-PB)*d[actKey]/maxVal,d[actKey]>0?2:0);
+    var tgtY=H-PB-tgtH,actY=H-PB-actH;
+    bars+="<rect x='"+x+"' y='"+tgtY+"' width='"+bW+"' height='"+tgtH+"' fill='"+AMBER+"' opacity='0.3' rx='2'/>";
+    if(d[tgtKey]>0)bars+="<text x='"+(x+bW/2)+"' y='"+(tgtY-3)+"' text-anchor='middle' font-size='6.5' fill='"+AMBER+"'>"+fmtS(d[tgtKey])+"</text>";
+    bars+="<rect x='"+(x+bW+gap)+"' y='"+actY+"' width='"+bW+"' height='"+actH+"' fill='"+(d.actual>0?TEAL:BORDER)+"' opacity='0.85' rx='2'/>";
+    if(d[actKey]>0)bars+="<text x='"+(x+bW+gap+bW/2)+"' y='"+(actY-3)+"' text-anchor='middle' font-size='6.5' fill='"+TEAL+"'>"+fmtS(d[actKey])+"</text>";
+    labels+="<text x='"+midX+"' y='"+(H-PB+11)+"' text-anchor='middle' font-size='7' fill='"+MUTED+"'>"+fmtM(d.month)+"</text>";
+    var cumTgtY=H-PB-Math.max((H-PT-PB)*d.cumTarget/maxVal,0);
+    var cumActY=H-PB-Math.max((H-PT-PB)*d.cumActual/maxVal,0);
+    tgtPts.push(midX+","+cumTgtY);
+    actPts.push(midX+","+cumActY);
+  });
+
+  if(tgtPts.length>1)lines+="<polyline points='"+tgtPts.join(" ")+"' fill='none' stroke='"+AMBER+"' stroke-width='2'/>";
+  if(actPts.length>1)lines+="<polyline points='"+actPts.join(" ")+"' fill='none' stroke='"+RED+"' stroke-width='2' stroke-dasharray='4,3'/>";
+
+  document.getElementById("targetChart").innerHTML="<div style='overflow-x:auto;max-width:100%'><svg viewBox='0 0 "+svgW+" "+H+"' style='display:block;width:100%;max-width:"+svgW+"px;height:"+H+"px;overflow:visible'>"+grid+bars+lines+labels+"</svg></div>";
+}
+
+function drawTreemap(){
+  var data=TM;
+  var colours=["#00d4aa", "#f59e0b", "#a78bfa", "#f87171", "#38bdf8", "#fb923c", "#4ade80", "#e879f9"];
+  var W=560,H=140,total=0;
+  data.forEach(function(d){total+=d.bua;});
+  var svg=document.getElementById("treemapSvg");
+  var legend=document.getElementById("treemapLegend");
+  document.getElementById("treemapTotal").textContent="Total: "+Math.round(total).toLocaleString()+" sqm";
+
+  // Simple row-based treemap layout
+  function layout(items,x,y,w,h){
+    var rects=[],tot=0;
+    items.forEach(function(i){tot+=i.bua;});
+    if(!tot)return rects;
+    if(w>=h){
+      var cx=x;
+      items.forEach(function(item){
+        var bw=w*item.bua/tot;
+        rects.push({item:item,x:cx,y:y,w:bw,h:h});
+        cx+=bw;
+      });
+    } else {
+      var cy=y;
+      items.forEach(function(item){
+        var bh=h*item.bua/tot;
+        rects.push({item:item,x:x,y:cy,w:w,h:bh});
+        cy+=bh;
+      });
+    }
+    return rects;
+  }
+
+  var rects=layout(data,0,0,W,H);
+  var svgHTML="";
+  rects.forEach(function(r,i){
+    var c=colours[i%colours.length];
+    var x=r.x,y=r.y,w=r.w,h=r.h,pad=2;
+    var rx=x+pad,ry=y+pad,rw=Math.max(w-pad*2,0),rh=Math.max(h-pad*2,0);
+    svgHTML+="<rect x='"+rx+"' y='"+ry+"' width='"+rw+"' height='"+rh+"' fill='"+c+"' opacity='0.85' rx='4'/>";
+    var cx=x+w/2,cy=y+h/2;
+    if(w>60&&h>30){
+      svgHTML+="<text x='"+cx+"' y='"+(cy-14)+"' text-anchor='middle' font-size='11' font-weight='700' fill='#0d1117'>"+r.item.type+"</text>";
+      svgHTML+="<text x='"+cx+"' y='"+(cy)+"' text-anchor='middle' font-size='10' fill='#0d1117'>"+r.item.pct+"%</text>";
+      svgHTML+="<text x='"+cx+"' y='"+(cy+13)+"' text-anchor='middle' font-size='9' fill='#0d1117' opacity='0.7'>"+Math.round(r.item.bua).toLocaleString()+" sqm</text>";
+      svgHTML+="<text x='"+cx+"' y='"+(cy+25)+"' text-anchor='middle' font-size='9' fill='#0d1117' opacity='0.7'>"+r.item.units+" units</text>";
+    } else if(w>30&&h>20){
+      svgHTML+="<text x='"+cx+"' y='"+(cy-4)+"' text-anchor='middle' font-size='9' font-weight='700' fill='#0d1117'>"+r.item.type+"</text>";
+      svgHTML+="<text x='"+cx+"' y='"+(cy+8)+"' text-anchor='middle' font-size='9' fill='#0d1117'>"+r.item.pct+"%</text>";
+    }
+  });
+  svg.innerHTML=svgHTML;
+
+  var legendHTML="";
+  data.forEach(function(item,i){
+    var c=colours[i%colours.length];
+    legendHTML+="<span style='color:"+c+";font-weight:600;font-size:10px;white-space:nowrap'>&#9646; "+item.type+": "+item.pct+"% &mdash; "+Math.round(item.bua).toLocaleString()+" sqm &mdash; "+item.units+" units</span>";
+  });
+  legend.innerHTML=legendHTML;
+}
+
+function buildKpis(){
+  var kpi=D.headerKpis;
+  var items=[
+    {l:"Total Released",v:kpi.totalReleased.toLocaleString(),c:TEXT},
+    {l:"Total Sold",v:kpi.totalSold.toLocaleString(),c:TEAL},
+    {l:"On Hold",v:kpi.totalHold.toLocaleString(),c:SLATE},
+    {l:"Absorption",v:kpi.overallAbsorption+"%",c:TEAL},
+    {l:"Total Revenue",v:fmt(kpi.totalRevenue),c:AMBER},
+    {l:"Total Committed",v:fmt(kpi.totalCommitted),c:"#f97316",sub:"incl. booked"},
+    {l:"Total Available",v:fmt(kpi.totalAvailable),c:AMBER,sub:"available + booked"}
+  ];
+  document.getElementById("kpiRow").innerHTML=items.map(function(k){
+    return "<div class='kpi'><div class='kpi-label'>"+k.l+"</div><div class='kpi-value' style='color:"+k.c+"'>"+k.v+"</div>"+(k.sub?"<div class='kpi-sub'>"+k.sub+"</div>":"")+"</div>";
+  }).join("");
+}
+
+function buildTabs(){
+  var container=document.getElementById("monthTabs");
+  container.innerHTML="";
+  D.months.forEach(function(m){
+    var btn=document.createElement("button");
+    btn.className="tab"+(m===sel?" active":"");
+    btn.textContent=fmtM(m);
+    btn.addEventListener("click",function(){selectMonth(m);});
+    container.appendChild(btn);
+  });
+}
+
+function drawTrend(){
+  var vals=D.trendData.map(function(d){return d.revenue;});
+  var min=Math.min.apply(null,vals),max=Math.max.apply(null,vals),range=max-min||1;
+  var W=600,H=90,PAD=10;
+  function px(i){return PAD+(i/(vals.length-1))*(W-PAD*2);}
+  function py(v){return H-PAD-(v-min)/range*(H-PAD*2);}
+  var pts=vals.map(function(v,i){return px(i)+","+py(v);}).join(" ");
+  var selIdx=D.months.indexOf(sel);
+  var dots=vals.map(function(v,i){
+    var r=i===selIdx?6:2.5,op=i===selIdx?1:0.4;
+    var stroke=i===selIdx?" stroke='"+BG+"' stroke-width='2'":"";
+    return "<circle cx='"+px(i)+"' cy='"+py(v)+"' r='"+r+"' fill='"+TEAL+"' opacity='"+op+"'"+stroke+"/>";
+  }).join("");
+  var labels=D.trendData.map(function(d,i){
+    return i%3===0?"<text x='"+px(i)+"' y='103' text-anchor='middle' font-size='8' fill='#64748b'>"+fmtM(d.month)+"</text>":"";
+  }).join("");
+  document.getElementById("trendSvg").innerHTML="<polyline points='"+pts+"' fill='none' stroke='"+TEAL+"' stroke-width='2'/>"+dots+labels;
+}
+
+function drawBar(){
+  var bd=D.byMonth[sel].metrics.barData;
+  var maxR=0;
+  bd.forEach(function(d){if(d.revenue>maxR)maxR=d.revenue;});
+  if(!maxR)maxR=1;
+  document.getElementById("barChart").innerHTML=bd.map(function(d){
+    var w=Math.max(d.revenue/maxR*100,1);
+    return "<div class='bar-row'><div class='bar-label-row'><span style='color:"+TEXT+";font-weight:500'>"+d.type+"</span><span style='color:"+MUTED+";font-weight:600;white-space:nowrap'>"+fmtS(d.revenue)+" <span style='font-size:10px;color:#64748b'>("+d.units+" units)</span></span></div><div class='bar-track'><div class='bar-fill' style='width:"+w+"%;background:"+TEAL+"'></div></div></div>";
+  }).join("");
+}
+
+function updateMonthly(){
+  var md=D.byMonth[sel],mx=md.metrics,mom=md.momPct;
+  document.getElementById("revValue").textContent=fmt(md.revenue);
+  var momEl=document.getElementById("momVal");
+  if(mom===null){momEl.textContent="—";momEl.style.color=MUTED;}
+  else{momEl.textContent=(mom>=0?"▲ ":"▼ ")+Math.abs(mom).toFixed(1)+"% MoM";momEl.style.color=mom>=0?TEAL:RED;}
+  document.getElementById("topMonthLabel").textContent=fmtM(sel);
+  document.getElementById("barMonthLabel").textContent=fmtM(sel);
+  document.getElementById("topGrossType").textContent=mx.topGross||"—";
+  document.getElementById("topGrossVal").textContent=fmt(mx.topGrossVal);
+  document.getElementById("topAbsType").textContent=mx.topAbsorption||"—";
+  document.getElementById("topAbsVal").textContent=mx.topAbsorptionVal+"%";
+  document.getElementById("topFastType").textContent=mx.fastestSell||"—";
+  document.getElementById("topFastVal").textContent="Avg "+mx.fastestSellDays+" days";
+  document.getElementById("btnThisMonth").textContent=fmtM(sel);
+  drawTrend();
+  drawTargetChart();
+  drawBar();
+  updateSummary();
+  if(grossOpen)drawGrossPanel();
+  if(absOpen)drawAbsPanel();
+  if(openProduct)drawProductBreakdown(openProduct);
+}
+
+function updateSummary(){
+  var stats=D.allTimeSummary;
+  var pies=sv==="allTime"?D.allTimeSummary:D.monthlyPies[sel];
+  var html="";
+  Object.keys(stats).forEach(function(type){
+    var s=stats[type],p=pies[type]||s;
+    var uc=p.unitCounts,vc=p.valueCounts;
+    var slug=type.replace(/\s/g,"-");
+    var isOpen=openProduct===type;
+    var cardBorder=isOpen?"border:1px solid "+TEAL+";border-radius:12px 12px 0 0;border-bottom:none;":"";
+    html+="<div>";
+    html+="<div class='pt-card' id='ptcard-"+slug+"' style='"+cardBorder+"'>";
+    html+="<div class='pt-name'>"+type+"</div>";
+    html+="<div class='stats-row'>";
+    html+="<div><div class='stat-label'>Avg BUA</div><div class='stat-value'>"+s.avgBUA+" sqm</div></div>";
+    html+="<div><div class='stat-label'>Avg Value</div><div class='stat-value'>"+fmt(s.avgSalesValue)+"</div></div>";
+    html+="<div><div class='stat-label'>EGP/sqm</div><div class='stat-value'>EGP "+Math.round(s.avgPriceSqm).toLocaleString()+"</div></div>";
+    html+="</div><div class='pie-row'>";
+    html+="<div class='pie-wrap'><div class='pie-title'>Units</div><svg id='pie-u-"+slug+"' viewBox='0 0 100 100' width='100' height='100'></svg>";
+    html+="<div class='legend'><span class='legend-item' style='color:"+TEAL+"'>&#9679; Sold: "+uc.sold+"</span> <span class='legend-item' style='color:"+SLATE+"'>&#9679; Hold: "+uc.hold+"</span> <span class='legend-item' style='color:"+AMBER+"'>&#9679; Available: "+uc.available+"</span></div></div>";
+    html+="<div class='pie-wrap'><div class='pie-title'>Value</div><svg id='pie-v-"+slug+"' viewBox='0 0 100 100' width='100' height='100'></svg>";
+    html+="<div class='legend'><span class='legend-item' style='color:"+TEAL+"'>&#9679; Sold: "+fmtS(vc.sold)+"</span> <span class='legend-item' style='color:"+SLATE+"'>&#9679; Hold: "+fmtS(vc.hold)+"</span> <span class='legend-item' style='color:"+AMBER+"'>&#9679; Available: "+fmtS(vc.available)+"</span></div></div>";
+    html+="</div>";
+    html+="<div style='text-align:right;font-size:9px;color:"+MUTED+";margin-top:8px;'>"+(isOpen?"▴ collapse":"▾ monthly breakdown")+"</div>";
+    html+="</div>";
+    if(isOpen){
+      html+="<div class='pt-breakdown' id='breakdown-"+slug+"'>";
+      html+="<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;'>";
+      html+="<div style='font-size:12px;font-weight:800;color:"+TEAL+"'>"+type+" &mdash; Monthly Breakdown</div>";
+      html+="<button id='close-"+slug+"' style='background:none;border:none;color:"+MUTED+";cursor:pointer;font-size:16px;'>&#10005;</button>";
+      html+="</div>";
+      html+="<div class='col-pair'>";
+      html+="<div><div class='col-label' style='color:"+TEAL+"'>Units Sold</div><div id='chart-u-"+slug+"'></div></div>";
+      html+="<div><div class='col-label' style='color:"+AMBER+"'>Revenue</div><div id='chart-r-"+slug+"'></div></div>";
+      html+="</div></div>";
+    }
+    html+="</div>";
+  });
+  document.getElementById("ptGrid").innerHTML=html;
+
+  Object.keys(stats).forEach(function(type){
+    var p=pies[type]||stats[type];
+    var slug=type.replace(/\s/g,"-");
+    var uc=p.unitCounts,vc=p.valueCounts;
+    drawPie("pie-u-"+slug,[uc.sold,uc.hold,uc.available],[TEAL,SLATE,AMBER]);
+    drawPie("pie-v-"+slug,[vc.sold,vc.hold,vc.available],[TEAL,SLATE,AMBER]);
+    var card=document.getElementById("ptcard-"+slug);
+    if(card){
+      (function(t,sl){
+        card.addEventListener("click",function(){toggleProductPanel(t,sl);});
+      })(type,slug);
+    }
+    var closeBtn=document.getElementById("close-"+slug);
+    if(closeBtn){
+      (function(sl){
+        closeBtn.addEventListener("click",function(e){
+          e.stopPropagation();
+          openProduct=null;
+          updateSummary();
+        });
+      })(slug);
+    }
+    if(openProduct===type){
+      drawProductBreakdown(type);
+    }
+  });
+  document.getElementById("footer").textContent="Data as of "+fmtM(D.months[D.months.length-1])+" · "+D.headerKpis.totalReleased+" released units · "+D.headerKpis.totalSold+" sold";
+}
+
+function drawProductBreakdown(type){
+  var slug=type.replace(/\s/g,"-");
+  var pmData=PM[type]||[];
+  if(document.getElementById("chart-u-"+slug))
+    drawColChart("chart-u-"+slug,pmData,function(d){return d.units;},TEAL,null);
+  if(document.getElementById("chart-r-"+slug))
+    drawColChart("chart-r-"+slug,pmData,function(d){return d.revenue;},AMBER,fmtS);
+}
+
+function toggleProductPanel(type){
+  openProduct=openProduct===type?null:type;
+  updateSummary();
+  if(openProduct){
+    setTimeout(function(){
+      var el=document.getElementById("breakdown-"+type.replace(/\s/g,"-"));
+      if(el)el.scrollIntoView({behavior:"smooth",block:"nearest"});
+    },50);
+  }
+}
+
+function toggleGrossPanel(){
+  grossOpen=!grossOpen;
+  document.getElementById("grossPanel").style.display=grossOpen?"block":"none";
+  document.getElementById("grossArrow").innerHTML=grossOpen?"VIEW ALL &#9650;":"VIEW ALL &#9660;";
+  if(grossOpen)drawGrossPanel();
+}
+function setGrossView(v){
+  grossView=v;
+  document.getElementById("btnGrossMonthly").classList.toggle("active",v==="monthly");
+  document.getElementById("btnGrossCumulative").classList.toggle("active",v==="cumulative");
+  drawGrossPanel();
+}
+
+function drawGrossPanel(){
+  var mx=D.byMonth[sel].metrics;
+  document.getElementById("grossPanelMonth").textContent=fmtM(sel);
+  var rates;
+  if(grossView==="monthly"){
+    rates=Object.keys(D.allTimeSummary).map(function(type){
+      var e=null;mx.barData.forEach(function(b){if(b.type===type)e=b;});
+      return{type:type,revenue:e?e.revenue:0,units:e?e.units:0,isCumulative:false};
+    });
+    rates.sort(function(a,b){return b.revenue-a.revenue;});
+    var topType=rates[0].revenue>0?rates[0].type:mx.topGross;
+    var maxR=rates[0].revenue||1;
+    document.getElementById("grossBreakdown").innerHTML=rates.map(function(g){
+      var isTop=g.type===topType;
+      var w=g.revenue>0?Math.max(g.revenue/maxR*100,2):2;
+      return "<div class='bar-row'><div class='bar-label-row'><span style='font-weight:"+(isTop?800:500)+";color:"+(isTop?AMBER:TEXT)+"'>"+(isTop?"&#127942; ":"")+g.type+"</span><span style='color:"+(isTop?AMBER:MUTED)+";font-weight:700;white-space:nowrap'>"+(g.revenue>0?fmt(g.revenue):"—")+(g.units>0?" <span style='font-size:10px;color:#64748b'>("+g.units+" units)</span>":"")+"</span></div><div class='bar-track'><div class='bar-fill' style='width:"+w+"%;background:"+(isTop?AMBER:BORDER)+"'></div></div></div>";
+    }).join("");
+  } else {
+    var cgData=CG[sel]||{};
+    rates=Object.keys(D.allTimeSummary).map(function(type){
+      return{type:type,revenue:cgData[type]||0};
+    });
+    rates.sort(function(a,b){return b.revenue-a.revenue;});
+    var topType=rates[0].type;
+    var maxR=rates[0].revenue||1;
+    document.getElementById("grossBreakdown").innerHTML=rates.map(function(g){
+      var isTop=g.type===topType;
+      var w=g.revenue>0?Math.max(g.revenue/maxR*100,2):2;
+      return "<div class='bar-row'><div class='bar-label-row'><span style='font-weight:"+(isTop?800:500)+";color:"+(isTop?AMBER:TEXT)+"'>"+(isTop?"&#127942; ":"")+g.type+"</span><span style='color:"+(isTop?AMBER:MUTED)+";font-weight:700;white-space:nowrap'>"+(g.revenue>0?fmt(g.revenue):"—")+"</span></div><div class='bar-track'><div class='bar-fill' style='width:"+w+"%;background:"+(isTop?AMBER:BORDER)+"'></div></div></div>";
+    }).join("");
+  }
+}
+
+function toggleAbsPanel(){
+  absOpen=!absOpen;
+  document.getElementById("absPanel").style.display=absOpen?"block":"none";
+  document.getElementById("absArrow").innerHTML=absOpen?"VIEW ALL &#9650;":"VIEW ALL &#9660;";
+  if(absOpen)drawAbsPanel();
+}
+function drawAbsPanel(){
+  var mx=D.byMonth[sel].metrics;
+  document.getElementById("absPanelMonth").textContent=fmtM(sel);
+  var selIdx=D.months.indexOf(sel);
+  var soldToDate={};
+  D.months.slice(0,selIdx+1).forEach(function(m){
+    Object.keys(D.monthlyPies[m]).forEach(function(type){
+      soldToDate[type]=(soldToDate[type]||0)+D.monthlyPies[m][type].unitCounts.sold;
+    });
+  });
+  var rates=Object.keys(D.allTimeSummary).map(function(type){
+    var s=D.allTimeSummary[type];
+    var released=s.unitCounts.sold+s.unitCounts.available;
+    var sold=soldToDate[type]||0;
+    return{type:type,rate:released>0?Math.round(sold/released*1000)/10:0,sold:sold,released:released};
+  });
+  rates.sort(function(a,b){return b.rate-a.rate;});
+  document.getElementById("absBreakdown").innerHTML=rates.map(function(a){
+    var isTop=a.type===mx.topAbsorption;
+    return "<div class='bar-row'><div class='bar-label-row'><span style='font-weight:"+(isTop?800:500)+";color:"+(isTop?TEAL:TEXT)+"'>"+(isTop?"&#128142; ":"")+a.type+"</span><span style='color:"+(isTop?TEAL:MUTED)+";font-weight:700;white-space:nowrap'>"+a.rate+"% <span style='font-size:10px;color:#64748b'>("+a.sold+"/"+a.released+" units)</span></span></div><div class='bar-track'><div class='bar-fill' style='width:"+Math.max(a.rate,2)+"%;background:"+(isTop?TEAL:BORDER)+"'></div></div></div>";
+  }).join("");
+}
+
+function selectMonth(m){
+  sel=m;
+  document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("active",t.textContent===fmtM(m));});
+  if(grossOpen){grossOpen=false;grossView="monthly";document.getElementById("grossPanel").style.display="none";document.getElementById("grossArrow").innerHTML="VIEW ALL &#9660;";}
+  if(absOpen){absOpen=false;document.getElementById("absPanel").style.display="none";document.getElementById("absArrow").innerHTML="VIEW ALL &#9660;";}
+  updateMonthly();
+}
+
+function setSummaryView(v){
+  sv=v;
+  document.getElementById("btnAllTime").classList.toggle("active",v==="allTime");
+  document.getElementById("btnThisMonth").classList.toggle("active",v==="thisMonth");
+  updateSummary();
+}
+
+document.getElementById("grossCard").addEventListener("click",toggleGrossPanel);
+document.getElementById("grossCloseBtn").addEventListener("click",toggleGrossPanel);
+document.getElementById("absCard").addEventListener("click",toggleAbsPanel);
+document.getElementById("absCloseBtn").addEventListener("click",toggleAbsPanel);
+document.getElementById("btnAllTime").addEventListener("click",function(){setSummaryView("allTime");});
+document.getElementById("btnThisMonth").addEventListener("click",function(){setSummaryView("thisMonth");});
+
+try {
+  buildKpis();
+  buildTabs();
+  updateMonthly();
+  drawTreemap();
+} catch(e) {
+  var errEl = document.getElementById("errMsg");
+  if(errEl) { errEl.style.display="block"; errEl.textContent = "Error: " + e.message + " (line: " + (e.lineNumber||e.stack||"?") + ")"; }
+}
+</script>
+</body>
+</html>
